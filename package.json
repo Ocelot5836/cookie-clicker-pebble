@@ -1,0 +1,61 @@
+{
+  "name": "cookie-clicker",
+  "author": "Ocelot",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "cookie-clicker",
+    "uuid": "359c8212-9a21-4234-b4cf-d36aa66f0584",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "dummy"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "COOKIE",
+          "file": "gfx/cookie-color.png",
+          "memoryFormat": "8Bit",
+          "spaceOptimization": "storage",
+          "targetPlatforms": [
+            "basalt",
+            "chalk",
+            "emergy",
+            "gabbro",
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "COOKIE",
+          "file": "gfx/cookie-bw.png",
+          "memoryFormat": "1Bit",
+          "spaceOptimization": "storage",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        }
+      ]
+    }
+  }
+}

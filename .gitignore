@@ -1,0 +1,7 @@
+.lock-waf*
+node_modules/
+build/
+*.pyc
+.vscode/
+# npm rewrites this lockfile during the build so clearly it's worthless anyway
+package-lock.json
