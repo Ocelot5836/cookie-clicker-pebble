@@ -42,7 +42,6 @@
           "targetPlatforms": [
             "basalt",
             "chalk",
-            "emergy",
             "gabbro",
             "emery"
           ]

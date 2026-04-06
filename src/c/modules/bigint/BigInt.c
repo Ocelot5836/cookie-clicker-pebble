@@ -693,39 +693,79 @@ int BigInt_is_zero(size_t NumWords, BigInt_t *BigInt)
 void BigInt_pow(size_t NumWords, BigInt_t *A, BigInt_t *B, BigInt_t *Out)
 {
     BigInt_zero(NumWords, Out);
+    BigInt_inc(NumWords, Out);
 
     if (BigInt_cmp(NumWords, B, Out) == EQUAL)
     {
         /* Return 1 when exponent is 0 -- BigInt^0 = 1 */
-        BigInt_inc(NumWords, Out);
+        return;
     }
-    else
+
+    // BigInt_t *bcopy = malloc(NumWords * BigIntWordSize), *tmp = malloc(NumWords * BigIntWordSize);
+    // BigInt_copy(NumWords, bcopy, B);
+
+    // /* Copy A -> tmp */
+    // BigInt_copy(NumWords, tmp, A);
+
+    // BigInt_dec(NumWords, bcopy);
+
+    // /* Begin summing products: */
+    // while (!BigInt_is_zero(NumWords, bcopy))
+    // {
+    //     /* Out = tmp * tmp */
+    //     BigInt_mul(NumWords, tmp, NumWords, A, NumWords, Out);
+    //     /* Decrement B by one */
+    //     BigInt_dec(NumWords, bcopy);
+
+    //     BigInt_copy(NumWords, tmp, Out);
+    // }
+
+    // /* Out = tmp */
+    // BigInt_copy(NumWords, Out, tmp);
+
+    // free(bcopy);
+    // free(tmp);
+
+    // BigInt_t *result = malloc(NumWords * BigIntWordSize), *base = malloc(NumWords * BigIntWordSize);
+
+    // /* Begin summing products: */
+    // while (!BigInt_is_zero(NumWords, bcopy))
+    // {
+    //     /* Out = tmp * tmp */
+    //     BigInt_mul(NumWords, tmp, NumWords, A, NumWords, Out);
+    //     /* Decrement B by one */
+    //     BigInt_dec(NumWords, bcopy);
+
+    //     BigInt_copy(NumWords, tmp, Out);
+    // }
+
+    BigInt_t *result = malloc(NumWords * BigIntWordSize);
+    BigInt_t *base = malloc(NumWords * BigIntWordSize);
+    BigInt_t *power = malloc(NumWords * BigIntWordSize);
+
+    BigInt_from_int(NumWords, result, 1);
+    BigInt_copy(NumWords, base, A);
+    BigInt_copy(NumWords, power, B);
+
+    while (!BigInt_is_zero(NumWords, power))
     {
-        BigInt_t *bcopy = malloc(NumWords * BigIntWordSize), *tmp = malloc(NumWords * BigIntWordSize);
-        BigInt_copy(NumWords, bcopy, B);
-
-        /* Copy A -> tmp */
-        BigInt_copy(NumWords, tmp, A);
-
-        BigInt_dec(NumWords, bcopy);
-
-        /* Begin summing products: */
-        while (!BigInt_is_zero(NumWords, bcopy))
+        if ((power[0] & 1) != 0)
         {
-            /* Out = tmp * tmp */
-            BigInt_mul(NumWords, tmp, NumWords, A, NumWords, Out);
-            /* Decrement B by one */
-            BigInt_dec(NumWords, bcopy);
-
-            BigInt_copy(NumWords, tmp, Out);
+            BigInt_copy(NumWords, Out, result);
+            BigInt_mul_basic(NumWords, Out, base, result);
         }
 
-        /* Out = tmp */
-        BigInt_copy(NumWords, Out, tmp);
+        BigInt_mul(NumWords, base, NumWords, base, NumWords, Out);
+        BigInt_copy(NumWords, base, Out);
 
-        free(bcopy);
-        free(tmp);
+        BigInt_rshift(NumWords, power, 1);
     }
+
+    BigInt_copy(NumWords, Out, result);
+    
+    free(result);
+    free(base);
+    free(power);
 }
 
 void BigInt_isqrt(size_t NumWords, BigInt_t *A, BigInt_t *B)
