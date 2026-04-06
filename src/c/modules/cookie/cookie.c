@@ -2,11 +2,12 @@
 #include "../engine/pixel.h"
 #include "../engine/math.h"
 
-#define PBL_COLOR 1
 #define PADDING 20
+#define DEBUG_NO_CLIP 0
 
 static GBitmap *s_cookie;
 static uint8_t s_cookie_size;
+static uint16_t base_scale;
 
 typedef struct DivResult
 {
@@ -51,13 +52,14 @@ void cookie_free()
     gbitmap_destroy(s_cookie);
 }
 
-void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, int32_t scale)
+void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8_t scale)
 {
     GRect dest_clip = layer_get_bounds(layer);
     GPoint src_ic = GPoint(s_cookie_size >> 1, s_cookie_size >> 1);
     GPoint dest_ic = GPoint(pos->x, pos->y);
+    uint16_t base_scale = (MIN(dest_clip.size.w, dest_clip.size.h) - 100) * COOKIE_SCALE_INCREMENT / 80;
 
-    grect_clip(&dest_clip, &GRect(dest_ic.x - src_ic.x - PADDING, dest_ic.y - src_ic.y - PADDING, s_cookie_size + PADDING * 2, s_cookie_size + PADDING * 2));
+    grect_clip(&dest_clip, &GRect(dest_ic.x - src_ic.x - PADDING, dest_ic.y - src_ic.y - PADDING, s_cookie_size + 2 * PADDING, s_cookie_size + 2 * PADDING));
 
     const int32_t cos_value = cos_lookup(-rotation);
     const int32_t sin_value = sin_lookup(-rotation);
@@ -74,14 +76,19 @@ void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, int32
         for (int x = startX; x < endX; x++)
         {
             const int32_t dx = x - dest_ic.x;
-            const int32_t src_numerator_x = (cos_value * dx - sin_value * dy) - scale * dx;
-            const int32_t src_numerator_y = (cos_value * dy + sin_value * dx) - scale * dy;
+            const int32_t src_numerator_x = (cos_value * dx - sin_value * dy) * (scale - base_scale + MAX_COOKIE_SCALE) / MAX_COOKIE_SCALE;
+            const int32_t src_numerator_y = (cos_value * dy + sin_value * dx) * (scale - base_scale + MAX_COOKIE_SCALE) / MAX_COOKIE_SCALE;
 
             const DivResult src_vector_x = polar_div(src_numerator_x, TRIG_MAX_RATIO);
             const DivResult src_vector_y = polar_div(src_numerator_y, TRIG_MAX_RATIO);
 
             const int16_t src_x = src_ic.x + src_vector_x.quot;
             const int16_t src_y = src_ic.y + src_vector_y.quot;
+
+            if (src_vector_x.quot * src_vector_x.quot + src_vector_y.quot * src_vector_y.quot >= (s_cookie_size >> 1) * (s_cookie_size >> 1))
+            {
+                continue;
+            }
 
             // only draw if within the src range
             const GBitmapDataRowInfo src_info = gbitmap_get_data_row_info(s_cookie, src_y);
@@ -93,51 +100,16 @@ void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, int32
             }
 
 #if PBL_BW
-            // dividing by 8 to avoid overflows of <thresh> in the next loop
-            const int32_t horiz_contrib[3] = {
-                src_vector_x.rem < 0 ? (-src_vector_x.rem) >> 3 : 0,
-                src_vector_x.rem < 0 ? (TRIG_MAX_RATIO + src_vector_x.rem) >> 3 : (TRIG_MAX_RATIO - src_vector_x.rem) >> 3,
-                src_vector_x.rem < 0 ? 0 : (src_vector_x.rem) >> 3};
-
-            const int32_t vert_contrib[3] = {
-                src_vector_y.rem < 0 ? (-src_vector_y.rem) >> 3 : 0,
-                src_vector_y.rem < 0 ? (TRIG_MAX_RATIO + src_vector_y.rem) >> 3 : (TRIG_MAX_RATIO - src_vector_y.rem) >> 3,
-                src_vector_y.rem < 0 ? 0 : (src_vector_y.rem) >> 3};
-
-            int32_t thresh = 0;
-
-            int8_t startX = src_x == 0 ? 0 : -1;
-            int8_t startY = src_y == 0 ? 0 : -1;
-            int8_t endX = src_x == dest_clip.size.w - 1 ? 0 : 1;
-            int8_t endY = src_y == dest_clip.size.h - 1 ? 0 : 1;
-            for (int yy = startY; yy <= endY; yy++)
+#if !DEBUG_NO_CLIP
+            if (((src_info.data[src_x >> 3]) >> (src_x & 7)) & 1)
+#endif
             {
-                const GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(s_cookie, src_y + yy);
-                for (int xx = -1; xx <= 1; xx++)
-                {
-                    if (src_x + xx >= 0 && src_x + xx < dest_clip.size.w && src_y + yy >= 0 && src_y + yy < dest_clip.size.h)
-                    {
-                        // I'm within bounds
-                        if (((row_info.data[(src_x + xx) >> 3]) >> ((src_x + xx) & 7)) & 1)
-                        {
-                            // more color
-                            thresh += (horiz_contrib[xx + 1] * vert_contrib[yy + 1]);
-                        }
-                        else
-                        {
-                            // less color
-                            thresh -= (horiz_contrib[xx + 1] * vert_contrib[yy + 1]);
-                        }
-                    }
-                }
-            }
-
-            if (thresh > 0)
-            {
-                set_pixel_color(dest_info, x, GColorBlack);
+                set_pixel_color(dest_info, x, GColorWhite);
             }
 #elif PBL_COLOR
+#if !DEBUG_NO_CLIP
             if (src_info.data[src_x] != GColorClearARGB8)
+#endif
             {
                 memset(&dest_info.data[x], src_info.data[src_x], 1);
             }

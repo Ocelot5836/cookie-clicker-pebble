@@ -2,8 +2,12 @@
 
 #include <pebble.h>
 
-#define TPS 25
+#define TPS 30
 #define DELTA (1000 / TPS)
-#define TIME_LOGGING
+// #define TIME_LOGGING 1
 
 void main_window_push();
+
+void main_window_free();
+
+void main_window_set_text(char* text);

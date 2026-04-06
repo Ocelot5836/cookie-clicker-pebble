@@ -8,12 +8,11 @@
   "private": true,
   "dependencies": {},
   "pebble": {
-    "displayName": "cookie-clicker",
+    "displayName": "Cookie Clicker",
     "uuid": "359c8212-9a21-4234-b4cf-d36aa66f0584",
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
-      "aplite",
       "basalt",
       "chalk",
       "diorite",
@@ -29,6 +28,11 @@
     ],
     "resources": {
       "media": [
+        {
+          "type": "font",
+          "name": "COOKIE_FONT_20",
+          "file": "cookie.ttf"
+        },
         {
           "type": "bitmap",
           "name": "COOKIE",
@@ -54,6 +58,12 @@
             "diorite",
             "flint"
           ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDINGS",
+          "file": "gfx/buildings.png",
+          "spaceOptimization": "memory"
         }
       ]
     }
