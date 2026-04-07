@@ -44,14 +44,16 @@ static void next_frame_handler(void *context)
     }
 
     uint16_t delta = endMs - startMs;
-    if (delta >= DELTA)
-    {
-        s_next_frame_timer = app_timer_register(0, next_frame_handler, NULL);
-    }
-    else
-    {
-        s_next_frame_timer = app_timer_register(DELTA - delta, next_frame_handler, NULL);
-    }
+    // if (delta >= DELTA)
+    // {
+    //     s_next_frame_timer = app_timer_register(0, next_frame_handler, NULL);
+    // }
+    // else
+    // {
+    // s_next_frame_timer = app_timer_register(DELTA - delta, next_frame_handler, NULL);
+    // }
+    
+    s_next_frame_timer = app_timer_register(DELTA, next_frame_handler, NULL);
 
 #if TIME_LOGGING
     if (delta > 0)

@@ -63,7 +63,8 @@ static void update_menu()
         for (size_t i = 0; i <= (uint8_t)last_purchased_index; i++)
         {
             BigInt_t *building_cost = building_get_cost((BuildingType)i);
-            format_cookie_number(building_cost, 50, s_option_subtitles[i]);
+            uint32_t offset = format_number(building_cost, 50, s_option_subtitles[i]);
+            snprintf(s_option_subtitles[i] + offset, 50 - offset, " cookies");
             snprintf(s_option_titles[i], 30, "x%d %s", building_counts[i], s_building_names[i]);
         }
         return;
@@ -89,7 +90,10 @@ static void update_menu()
         }
 
         BigInt_t *building_cost = building_get_cost((BuildingType)i);
-        format_cookie_number(building_cost, 50, s_option_subtitles[i]);
+
+        uint32_t offset = format_number(building_cost, 50, s_option_subtitles[i]);
+        snprintf(s_option_subtitles[i] + offset, 50 - offset, " cookies");
+
         if (hidden)
         {
             strncpy(s_option_titles[i], "???", 4);

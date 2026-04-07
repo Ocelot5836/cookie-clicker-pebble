@@ -1,5 +1,6 @@
 #include "numberformat.h"
 #include "../storage/storage.h"
+#include "../../windows/main_window.h"
 #include <math.h>
 
 #define NUMBER_NAMES_COUNT 21
@@ -80,9 +81,9 @@ void format_free()
     store2 = NULL;
 }
 
-void format_cookie_number(BigInt_t *value, size_t max_length, char *buffer)
+void format_cookie_number(BigInt_t *value, BigInt_t *cpt, size_t max_length, char *buffer)
 {
-    uint8_t written = 0;
+    memset(buffer, 0, max_length);
 
     if (BigInt_cmp(COOKIE_COUNTER_WORDS, value, cmp) != SMALLER)
     {
@@ -95,8 +96,22 @@ void format_cookie_number(BigInt_t *value, size_t max_length, char *buffer)
 
             if (i == NUMBER_NAMES_COUNT || BigInt_cmp(COOKIE_COUNTER_WORDS, from, cmp) == SMALLER)
             {
-                // BigInt_mul(COOKIE_COUNTER_WORDS, from, 1, cmp, COOKIE_COUNTER_WORDS, to);
-                written = format_number_manual(buffer, max_length, (double)BigInt_to_long(COOKIE_COUNTER_WORDS, to) / 1000000.0, s_names[i - 1], 3, true);
+                uint8_t written = format_number_manual(buffer, max_length, (double)BigInt_to_long(COOKIE_COUNTER_WORDS, to) / 1000000.0, s_names[i - 1], 3, true);
+
+                double cps = (double)BigInt_to_long(COOKIE_COUNTER_WORDS, cpt) / (double)TPS;
+                uint64_t int_part = (uint64_t)cps;
+
+                double diff = cps - (double)int_part;
+                uint64_t frac_part = (uint64_t)(diff * 10 + 0.5); // +0.5 for rounding
+
+                if (frac_part == 0)
+                {
+                    snprintf(buffer + written, max_length - written, "\nper second: %llu", int_part);
+                }
+                else
+                {
+                    snprintf(buffer + written, max_length - written, "\nper second: %llu.%lld", int_part, frac_part);
+                }
                 break;
             }
             BigInt_div(COOKIE_COUNTER_WORDS, from, divide, to);
@@ -104,15 +119,27 @@ void format_cookie_number(BigInt_t *value, size_t max_length, char *buffer)
     }
     else
     {
-        written = snprintf(buffer, max_length, "%llu\ncookies", BigInt_to_long(COOKIE_COUNTER_WORDS, value));
-    }
+        double cps = (double)BigInt_to_long(COOKIE_COUNTER_WORDS, cpt) / (double)TPS;
+        uint64_t int_part = (uint64_t)cps;
 
-    buffer[written] = 0;
+        double diff = cps - (double)int_part;
+        uint64_t frac_part = (uint64_t)(diff * 10 + 0.5); // +0.5 for rounding
+
+        if (frac_part == 0)
+        {
+            snprintf(buffer, max_length, "%llu\ncookies\nper second: %llu", BigInt_to_long(COOKIE_COUNTER_WORDS, value), int_part);
+        }
+        else
+        {
+            snprintf(buffer, max_length, "%llu\ncookies\nper second: %llu.%lld", BigInt_to_long(COOKIE_COUNTER_WORDS, value), int_part, frac_part);
+        }
+    }
 }
 
-void format_number(BigInt_t *value, size_t max_length, char *buffer)
+uint32_t format_number(BigInt_t *value, size_t max_length, char *buffer)
 {
-    uint8_t written = 0;
+    memset(buffer, 0, max_length);
+    uint32_t written = 0;
 
     BigInt_from_int(COOKIE_COUNTER_WORDS, cmp, 1000000);
     if (BigInt_cmp(COOKIE_COUNTER_WORDS, value, cmp) != SMALLER)
@@ -139,5 +166,5 @@ void format_number(BigInt_t *value, size_t max_length, char *buffer)
         written = snprintf(buffer, max_length, "%llu", BigInt_to_long(COOKIE_COUNTER_WORDS, value));
     }
 
-    buffer[written] = 0;
+    return written;
 }

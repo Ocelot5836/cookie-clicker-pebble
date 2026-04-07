@@ -2,6 +2,7 @@
 
 #include <pebble.h>
 #include "../bigint/BigInt.h"
+#include "../../windows/main_window.h"
 
 typedef enum
 {
@@ -62,8 +63,10 @@ typedef enum
 
 void buildings_init(uint8_t *building_counts);
 
+void buildings_free();
+
 BigInt_t *building_update_cost(BuildingType type, uint8_t building_count);
 
 BigInt_t *building_get_cost(BuildingType type);
 
-void buildings_free();
+void building_get_cpt(uint8_t *building_counts, BigInt_t *store);

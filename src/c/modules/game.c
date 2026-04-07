@@ -12,6 +12,8 @@
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
 static BigInt_t *s_cookie_count;
+static BigInt_t *s_cookie_cpt;
+static uint64_t s_sub_cookies;
 static uint8_t s_building_counts[NUM_BUILDINGS];
 static char s_counter[MAX_TEXT_LENGTH + 1];
 
@@ -26,7 +28,7 @@ static uint8_t get_scale(uint8_t x)
 
 static void update_text()
 {
-    format_cookie_number(s_cookie_count, MAX_TEXT_LENGTH, s_counter);
+    format_cookie_number(s_cookie_count, s_cookie_cpt, MAX_TEXT_LENGTH, s_counter);
     main_window_set_text(s_counter);
 }
 
@@ -35,16 +37,20 @@ void game_init(Window *window)
     s_game_time = 0;
     s_animation_time = 0;
 
-    s_cookie_count = calloc(BigIntWordSize, BigIntWordSize * COOKIE_COUNTER_WORDS);
+    s_cookie_count = calloc(COOKIE_COUNTER_WORDS, BigIntWordSize);
     storage_read_cookies(s_cookie_count);
 
     storage_read_buildings(s_building_counts);
     buildings_init(s_building_counts);
+
+    s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    building_get_cpt(s_building_counts, s_cookie_cpt);
 }
 
 void game_free()
 {
     free(s_cookie_count);
+    free(s_cookie_cpt);
     buildings_free();
 }
 
@@ -65,6 +71,25 @@ bool game_update(Window *window)
     if (s_animation_time > 0)
     {
         s_animation_time--;
+    }
+
+    if (!BigInt_is_zero(COOKIE_COUNTER_WORDS, s_cookie_cpt))
+    {
+        uint64_t cpt = BigInt_to_long(COOKIE_COUNTER_WORDS, s_cookie_cpt);
+        s_sub_cookies += cpt;
+
+        if (s_sub_cookies > TPS * TPS)
+        {
+            while (s_sub_cookies > TPS * TPS)
+            {
+                s_sub_cookies -= TPS * TPS;
+                BigInt_inc(COOKIE_COUNTER_WORDS, s_cookie_count);
+            }
+
+            storage_write_cookies(s_cookie_count);
+            update_text();
+            shop_on_cookie_change();
+        }
     }
 
     return true;
@@ -129,11 +154,12 @@ uint8_t game_purchase(BuildingType building, uint8_t count)
     storage_write_buildings(s_building_counts);
     update_text();
     shop_on_cookie_change();
+    building_get_cpt(s_building_counts, s_cookie_cpt);
 
     return i;
 }
 
-uint8_t* game_get_building_counts()
+uint8_t *game_get_building_counts()
 {
     return s_building_counts;
 }

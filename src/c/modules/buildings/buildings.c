@@ -3,6 +3,31 @@
 #include <math.h>
 
 static BigInt_t *s_building_costs[NUM_BUILDINGS];
+static BigInt_t *factor;
+static BigInt_t *temp1;
+static BigInt_t *temp2;
+static uint64_t s_building_cpt[] = {
+    TPS / 10uLL,
+    TPS,
+    TPS * 8uLL,
+    TPS * 47uLL,
+    TPS * 260uLL,
+    TPS * 1400uLL,
+    TPS * 7800uLL,
+    TPS * 44000uLL,
+    TPS * 260000uLL,
+    TPS * 1600000uLL,
+    TPS * 10uLL * MILLION,
+    TPS * 65uLL * MILLION,
+    TPS * 430uLL * MILLION,
+    TPS * 2900uLL * MILLION,
+    TPS * 21uLL * BILLION,
+    TPS * 150uLL * BILLION,
+    TPS * 1100uLL * BILLION,
+    TPS * 8300uLL * BILLION,
+    TPS * 64uLL * TRILLION,
+    TPS * 510uLL * TRILLION,
+};
 
 static void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store, BigInt_t *tmp1, BigInt_t *tmp2, BigInt_t *tmp3)
 {
@@ -103,6 +128,9 @@ void buildings_init(uint8_t *building_counts)
     BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
 
+    factor = malloc(BigIntWordSize * 2);
+    temp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    temp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
         s_building_costs[i] = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
@@ -112,6 +140,17 @@ void buildings_init(uint8_t *building_counts)
     free(tmp1);
     free(tmp2);
     free(tmp3);
+}
+
+void buildings_free()
+{
+    free(factor);
+    free(temp1);
+    free(temp2);
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
+    {
+        free(s_building_costs[i]);
+    }
 }
 
 BigInt_t *building_update_cost(BuildingType type, uint8_t building_count)
@@ -134,10 +173,20 @@ BigInt_t *building_get_cost(BuildingType type)
     return s_building_costs[type];
 }
 
-void buildings_free()
+void building_get_cpt(uint8_t *building_counts, BigInt_t *store)
 {
+    BigInt_zero(COOKIE_COUNTER_WORDS, store);
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
-        free(s_building_costs[i]);
+        if (building_counts[i] == 0)
+        {
+            continue;
+        }
+        
+        BigInt_from_int(2, factor, building_counts[i]);
+        BigInt_from_int(COOKIE_COUNTER_WORDS, temp1, s_building_cpt[i]);
+        BigInt_mul(2, factor, COOKIE_COUNTER_WORDS, temp1, COOKIE_COUNTER_WORDS, temp2);
+        BigInt_add(COOKIE_COUNTER_WORDS, store, COOKIE_COUNTER_WORDS, temp2, COOKIE_COUNTER_WORDS, temp1);
+        BigInt_copy(COOKIE_COUNTER_WORDS, store, temp1);
     }
 }
