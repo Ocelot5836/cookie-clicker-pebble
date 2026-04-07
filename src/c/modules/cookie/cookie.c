@@ -7,24 +7,14 @@
 
 static GBitmap *s_cookie;
 static uint8_t s_cookie_size;
-static uint16_t base_scale;
-
-typedef struct DivResult
-{
-    int16_t quot;
-    int16_t rem;
-} DivResult;
 
 //! a div and mod operation where any remainder will always be the same direction as the numerator
-static DivResult polar_div(int32_t numer, uint32_t denom)
+static int16_t polar_div(int32_t numer, uint32_t denom)
 {
-    DivResult res;
-    res.quot = numer / denom;
-    res.rem = numer % denom;
-    if (numer < 0 && res.rem > 0)
+    int16_t res = numer / denom;
+    if (numer < 0 && (numer % denom) > 0)
     {
-        res.rem -= denom;
-        res.quot += denom;
+        res += denom;
     }
     return res;
 }
@@ -79,13 +69,13 @@ void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8
             const int32_t src_numerator_x = (cos_value * dx - sin_value * dy) * (scale - base_scale + MAX_COOKIE_SCALE) / MAX_COOKIE_SCALE;
             const int32_t src_numerator_y = (cos_value * dy + sin_value * dx) * (scale - base_scale + MAX_COOKIE_SCALE) / MAX_COOKIE_SCALE;
 
-            const DivResult src_vector_x = polar_div(src_numerator_x, TRIG_MAX_RATIO);
-            const DivResult src_vector_y = polar_div(src_numerator_y, TRIG_MAX_RATIO);
+            const uint16_t src_vector_x = polar_div(src_numerator_x, TRIG_MAX_RATIO);
+            const uint16_t src_vector_y = polar_div(src_numerator_y, TRIG_MAX_RATIO);
 
-            const int16_t src_x = src_ic.x + src_vector_x.quot;
-            const int16_t src_y = src_ic.y + src_vector_y.quot;
+            const int16_t src_x = src_ic.x + src_vector_x;
+            const int16_t src_y = src_ic.y + src_vector_y;
 
-            if (src_vector_x.quot * src_vector_x.quot + src_vector_y.quot * src_vector_y.quot >= (s_cookie_size >> 1) * (s_cookie_size >> 1))
+            if (src_vector_x * src_vector_x + src_vector_y * src_vector_y >= (s_cookie_size >> 1) * (s_cookie_size >> 1))
             {
                 continue;
             }

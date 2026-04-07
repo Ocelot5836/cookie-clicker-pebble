@@ -5,9 +5,14 @@
 static Window *s_window;
 static Layer *s_render_layer;
 static GFont s_font;
+static GFont s_subfont;
 static TextLayer *s_text_layer;
+static TextLayer *s_subtext_layer;
 static AppTimer *s_next_frame_timer;
 static bool s_screen_dirty;
+
+static char s_text[MAX_TEXT_LENGTH + 1];
+static char s_subtext[MAX_SUBTEXT_LENGTH + 1];
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context)
 {
@@ -33,9 +38,13 @@ static void next_frame_handler(void *context)
     }
 
     // Run
+#if TIME_LOGGING
     uint16_t startMs = time_ms(NULL, NULL);
+#endif
     s_screen_dirty |= game_update(s_window);
+#if TIME_LOGGING
     uint16_t endMs = time_ms(NULL, NULL);
+#endif
 
     // Draw the next frame
     if (s_screen_dirty)
@@ -43,19 +52,10 @@ static void next_frame_handler(void *context)
         layer_mark_dirty(window_get_root_layer(s_window));
     }
 
-    uint16_t delta = endMs - startMs;
-    // if (delta >= DELTA)
-    // {
-    //     s_next_frame_timer = app_timer_register(0, next_frame_handler, NULL);
-    // }
-    // else
-    // {
-    // s_next_frame_timer = app_timer_register(DELTA - delta, next_frame_handler, NULL);
-    // }
-    
     s_next_frame_timer = app_timer_register(DELTA, next_frame_handler, NULL);
 
 #if TIME_LOGGING
+    uint16_t delta = endMs - startMs;
     if (delta > 0)
     {
         APP_LOG(APP_LOG_LEVEL_INFO, "Took %dms to update", delta);
@@ -129,17 +129,30 @@ static void window_load(Window *window)
     GRect bounds = layer_get_bounds(window_layer);
 
     s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_20));
+    s_subfont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
 
     s_render_layer = layer_create(bounds);
     layer_set_update_proc(s_render_layer, render_handler);
     layer_add_child(window_layer, s_render_layer);
 
-    s_text_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 20, bounds.size.w, bounds.size.h), bounds));
+    memset(s_text, 0, sizeof(char) * (MAX_TEXT_LENGTH + 1));
+    memset(s_subtext, 0, sizeof(char) * (MAX_SUBTEXT_LENGTH + 1));
+
+    s_text_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 20, bounds.size.w, 45), GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, 45)));
     text_layer_set_font(s_text_layer, s_font);
     text_layer_set_background_color(s_text_layer, GColorClear);
     text_layer_set_text_color(s_text_layer, GColorWhite);
     text_layer_set_text_alignment(s_text_layer, GTextAlignmentCenter);
+    text_layer_set_text(s_text_layer, s_text);
     layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
+
+    s_subtext_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 65, bounds.size.w, 20), GRect(bounds.origin.x, bounds.origin.y + 45, bounds.size.w, 20)));
+    text_layer_set_font(s_subtext_layer, s_subfont);
+    text_layer_set_background_color(s_subtext_layer, GColorClear);
+    text_layer_set_text_color(s_subtext_layer, GColorWhite);
+    text_layer_set_text_alignment(s_subtext_layer, GTextAlignmentCenter);
+    text_layer_set_text(s_subtext_layer, s_subtext);
+    layer_add_child(window_layer, text_layer_get_layer(s_subtext_layer));
 
     s_next_frame_timer = app_timer_register(DELTA, next_frame_handler, NULL);
 
@@ -156,8 +169,14 @@ static void window_unload(Window *window)
     fonts_unload_custom_font(s_font);
     s_font = NULL;
 
+    fonts_unload_custom_font(s_subfont);
+    s_subfont = NULL;
+
     text_layer_destroy(s_text_layer);
     s_text_layer = NULL;
+
+    text_layer_destroy(s_subtext_layer);
+    s_subtext_layer = NULL;
 
     game_free();
 }
@@ -184,9 +203,15 @@ void main_window_free()
     window_destroy(s_window);
 }
 
-void main_window_set_text(char *text)
+void main_window_get_text(char **text, char **subtext)
 {
-    text_layer_set_text(s_text_layer, text);
+    *text = s_text;
+    *subtext = s_subtext;
+}
+
+void main_window_update_text()
+{
     layer_mark_dirty(text_layer_get_layer(s_text_layer));
+    layer_mark_dirty(text_layer_get_layer(s_subtext_layer));
     s_screen_dirty = true;
 }

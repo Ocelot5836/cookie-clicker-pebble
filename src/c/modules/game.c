@@ -7,15 +7,15 @@
 #include "engine/math.h"
 #include <math.h>
 
-#define MAX_TEXT_LENGTH 50
-
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
 static BigInt_t *s_cookie_count;
 static BigInt_t *s_cookie_cpt;
 static uint64_t s_sub_cookies;
 static uint8_t s_building_counts[NUM_BUILDINGS];
-static char s_counter[MAX_TEXT_LENGTH + 1];
+
+static char* s_text;
+static char* s_subtext;
 
 static uint8_t get_scale(uint8_t x)
 {
@@ -28,8 +28,9 @@ static uint8_t get_scale(uint8_t x)
 
 static void update_text()
 {
-    format_cookie_number(s_cookie_count, s_cookie_cpt, MAX_TEXT_LENGTH, s_counter);
-    main_window_set_text(s_counter);
+    format_cookie_number(s_cookie_count, MAX_TEXT_LENGTH, s_text);
+    format_cps_number(s_cookie_cpt, MAX_SUBTEXT_LENGTH, s_subtext);
+    main_window_update_text();
 }
 
 void game_init(Window *window)
@@ -45,6 +46,8 @@ void game_init(Window *window)
 
     s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     building_get_cpt(s_building_counts, s_cookie_cpt);
+
+    main_window_get_text(&s_text, &s_subtext);
 }
 
 void game_free()
@@ -75,6 +78,7 @@ bool game_update(Window *window)
 
     if (!BigInt_is_zero(COOKIE_COUNTER_WORDS, s_cookie_cpt))
     {
+        // TODO use long integer for sub cookies
         uint64_t cpt = BigInt_to_long(COOKIE_COUNTER_WORDS, s_cookie_cpt);
         s_sub_cookies += cpt;
 
