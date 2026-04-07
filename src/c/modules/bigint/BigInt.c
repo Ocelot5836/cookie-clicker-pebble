@@ -695,7 +695,7 @@ void BigInt_pow(size_t NumWords, BigInt_t *A, BigInt_t *B, BigInt_t *Out)
     BigInt_zero(NumWords, Out);
     BigInt_inc(NumWords, Out);
 
-    if (BigInt_cmp(NumWords, B, Out) == EQUAL)
+    if (BigInt_is_zero(NumWords, B))
     {
         /* Return 1 when exponent is 0 -- BigInt^0 = 1 */
         return;
@@ -762,7 +762,7 @@ void BigInt_pow(size_t NumWords, BigInt_t *A, BigInt_t *B, BigInt_t *Out)
     }
 
     BigInt_copy(NumWords, Out, result);
-    
+
     free(result);
     free(base);
     free(power);

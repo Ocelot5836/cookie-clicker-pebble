@@ -60,4 +60,10 @@ typedef enum
 #define CORTEX_BAKER_BASE_COST 1900000000uLL
 #define YOU_BASE_COST 540000000000uLL
 
-void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store);
+void buildings_init(uint8_t *building_counts);
+
+BigInt_t *building_update_cost(BuildingType type, uint8_t building_count);
+
+BigInt_t *building_get_cost(BuildingType type);
+
+void buildings_free();

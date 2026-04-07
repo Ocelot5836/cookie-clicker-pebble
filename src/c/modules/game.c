@@ -1,8 +1,10 @@
 #include "game.h"
 #include "../windows/main_window.h"
+#include "../windows/shop_window.h"
 #include "cookie/cookie.h"
 #include "storage/storage.h"
 #include "engine/numberformat.h"
+#include "engine/math.h"
 #include <math.h>
 
 #define MAX_TEXT_LENGTH 50
@@ -10,6 +12,7 @@
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
 static BigInt_t *s_cookie_count;
+static uint8_t s_building_counts[NUM_BUILDINGS];
 static char s_counter[MAX_TEXT_LENGTH + 1];
 
 static uint8_t get_scale(uint8_t x)
@@ -31,20 +34,28 @@ void game_init(Window *window)
 {
     s_game_time = 0;
     s_animation_time = 0;
+
+    s_cookie_count = calloc(BigIntWordSize, BigIntWordSize * COOKIE_COUNTER_WORDS);
+    storage_read_cookies(s_cookie_count);
+
+    storage_read_buildings(s_building_counts);
+    buildings_init(s_building_counts);
+}
+
+void game_free()
+{
+    free(s_cookie_count);
+    buildings_free();
 }
 
 void game_init_resources()
 {
     cookie_load(RESOURCE_ID_COOKIE);
-    s_cookie_count = calloc(BigIntWordSize, BigIntWordSize * COOKIE_COUNTER_WORDS);
-    storage_read(s_cookie_count);
-
     update_text();
 }
 
 void game_free_resources()
 {
-    free(s_cookie_count);
     cookie_free();
 }
 
@@ -54,12 +65,6 @@ bool game_update(Window *window)
     if (s_animation_time > 0)
     {
         s_animation_time--;
-    }
-
-    if ((s_game_time % TPS) == 0)
-    {
-        storage_write(s_cookie_count);
-        update_text();
     }
 
     return true;
@@ -87,9 +92,53 @@ void game_click()
 {
     s_animation_time = GAME_MAX_ANIMATION_TIME;
     BigInt_inc(COOKIE_COUNTER_WORDS, s_cookie_count);
+    storage_write_cookies(s_cookie_count);
     update_text();
+    shop_on_cookie_change();
 }
 
-void game_free()
+uint8_t game_purchase(BuildingType building, uint8_t count)
 {
+    uint8_t to_buy_count = MIN(255 - s_building_counts[building], count);
+    if (to_buy_count == 0)
+    {
+        return 0;
+    }
+
+    BigInt_t *tmp = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    int8_t i;
+
+    for (i = 0; i < to_buy_count; i++)
+    {
+        BigInt_t *building_cost = building_get_cost(building);
+        if (BigInt_cmp(COOKIE_COUNTER_WORDS, s_cookie_count, building_cost) == SMALLER)
+        {
+            break;
+        }
+
+        BigInt_sub(COOKIE_COUNTER_WORDS, s_cookie_count, COOKIE_COUNTER_WORDS, building_cost, COOKIE_COUNTER_WORDS, tmp);
+        BigInt_copy(COOKIE_COUNTER_WORDS, s_cookie_count, tmp);
+
+        s_building_counts[building]++;
+        building_update_cost(building, s_building_counts[building]);
+    }
+
+    free(tmp);
+
+    storage_write_cookies(s_cookie_count);
+    storage_write_buildings(s_building_counts);
+    update_text();
+    shop_on_cookie_change();
+
+    return i;
+}
+
+uint8_t* game_get_building_counts()
+{
+    return s_building_counts;
+}
+
+BigInt_t *game_get_cookie_count()
+{
+    return s_cookie_count;
 }

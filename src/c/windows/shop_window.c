@@ -1,7 +1,9 @@
 #include "shop_window.h"
 #include "../modules/engine/numberformat.h"
+#include "../modules/engine/math.h"
 #include "../modules/buildings/buildings.h"
 #include "../modules/storage/storage.h"
+#include "../modules/game.h"
 
 #define MENU_SPRITE_SIZE 32
 
@@ -33,13 +35,79 @@ static SimpleMenuLayer *s_simple_menu_layer;
 static SimpleMenuSection s_menu_sections[1];
 static SimpleMenuItem s_first_menu_items[NUM_BUILDINGS];
 
-static char *s_building_values[NUM_BUILDINGS];
+static char *s_option_titles[NUM_BUILDINGS];
+static char *s_option_subtitles[NUM_BUILDINGS];
 static GBitmap *s_menu_icon_buildings;
-static GBitmap *s_menu_icon[NUM_BUILDINGS];
+
+static void update_menu()
+{
+    uint8_t *building_counts = game_get_building_counts();
+    int8_t last_purchased_index = -1;
+
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
+    {
+        if (building_counts[i] != 0)
+        {
+            last_purchased_index = i;
+        }
+    }
+
+    uint32_t count = MIN((uint32_t)(last_purchased_index + 3), NUM_BUILDINGS);
+    if (s_menu_sections[0].num_items == count)
+    {
+        if (last_purchased_index < 0)
+        {
+            return;
+        }
+
+        for (size_t i = 0; i <= (uint8_t)last_purchased_index; i++)
+        {
+            BigInt_t *building_cost = building_get_cost((BuildingType)i);
+            format_cookie_number(building_cost, 50, s_option_subtitles[i]);
+            snprintf(s_option_titles[i], 30, "x%d %s", building_counts[i], s_building_names[i]);
+        }
+        return;
+    }
+
+    s_menu_sections[0].num_items = count;
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
+    {
+        bool hidden = last_purchased_index < 0 || i > (uint8_t)last_purchased_index;
+
+        if (i < count)
+        {
+            if (s_first_menu_items[i].icon != NULL)
+            {
+                free(s_first_menu_items[i].icon);
+            }
+            s_first_menu_items[i].icon = gbitmap_create_as_sub_bitmap(s_menu_icon_buildings, GRect(hidden ? MENU_SPRITE_SIZE : 0, i * MENU_SPRITE_SIZE, MENU_SPRITE_SIZE, MENU_SPRITE_SIZE));
+        }
+        else if (s_first_menu_items[i].icon != NULL)
+        {
+            free(s_first_menu_items[i].icon);
+            s_first_menu_items[i].icon = NULL;
+        }
+
+        BigInt_t *building_cost = building_get_cost((BuildingType)i);
+        format_cookie_number(building_cost, 50, s_option_subtitles[i]);
+        if (hidden)
+        {
+            strncpy(s_option_titles[i], "???", 4);
+        }
+        else
+        {
+            snprintf(s_option_titles[i], 30, "x%d %s", building_counts[i], s_building_names[i]);
+        }
+    }
+}
 
 static void menu_select_callback(int index, void *ctx)
 {
-    s_first_menu_items[index].subtitle = "You've hit select here!";
+    if (game_purchase((BuildingType)index, 1) == 0)
+    {
+        return;
+    }
+
     layer_mark_dirty(simple_menu_layer_get_layer(s_simple_menu_layer));
 }
 
@@ -55,31 +123,25 @@ static void window_load(Window *window)
         APP_LOG(APP_LOG_LEVEL_INFO, "NULL");
     }
 
-    BigInt_t *tmp = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-
-    for (int i = 0; i < NUM_BUILDINGS; i++)
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
-        s_menu_icon[i] = gbitmap_create_as_sub_bitmap(s_menu_icon_buildings, GRect(0, i * MENU_SPRITE_SIZE, MENU_SPRITE_SIZE, MENU_SPRITE_SIZE));
-        s_building_values[i] = malloc(sizeof(char) * 51);
-        building_set_cost(BUILDING_TYPE_CURSOR + i, 0, tmp);
-        format_cookie_number(tmp, 50, s_building_values[i]);
+        s_option_titles[i] = calloc(31, sizeof(char));
+        s_option_subtitles[i] = calloc(51, sizeof(char));
 
         s_first_menu_items[i] = (SimpleMenuItem){
-            .title = s_building_names[i],
-            .subtitle = s_building_values[i],
+            .title = s_option_titles[i],
+            .subtitle = s_option_subtitles[i],
             .callback = menu_select_callback,
-            .icon = s_menu_icon[i],
+            .icon = NULL,
         };
-
-        APP_LOG(APP_LOG_LEVEL_INFO, "%d Bytes Free: %lu", i, heap_bytes_free());
     }
 
-    free(tmp);
-
     s_menu_sections[0] = (SimpleMenuSection){
-        .num_items = NUM_BUILDINGS,
         .items = s_first_menu_items,
+        .num_items = 0,
     };
+
+    update_menu();
 
     s_simple_menu_layer = simple_menu_layer_create(bounds, window, s_menu_sections, 1, NULL);
     layer_add_child(window_layer, simple_menu_layer_get_layer(s_simple_menu_layer));
@@ -92,10 +154,16 @@ static void window_unload(Window *window)
 
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
-        free(s_menu_icon[i]);
-        s_menu_icon[i] = NULL;
-        free(s_building_values[i]);
-        s_building_values[i] = NULL;
+        if (s_first_menu_items[i].icon != NULL)
+        {
+            free(s_first_menu_items[i].icon);
+            s_first_menu_items[i].icon = NULL;
+        }
+
+        free(s_option_titles[i]);
+        s_option_titles[i] = NULL;
+        free(s_option_subtitles[i]);
+        s_option_subtitles[i] = NULL;
     }
 
     gbitmap_destroy(s_menu_icon_buildings);
@@ -118,4 +186,15 @@ void shop_window_push()
 void shop_window_free()
 {
     window_destroy(s_window);
+}
+
+void shop_on_cookie_change()
+{
+    if (!window_stack_contains_window(s_window))
+    {
+        return;
+    }
+
+    update_menu();
+    layer_mark_dirty(simple_menu_layer_get_layer(s_simple_menu_layer));
 }

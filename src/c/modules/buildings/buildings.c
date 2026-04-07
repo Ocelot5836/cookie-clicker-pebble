@@ -2,19 +2,10 @@
 #include "../storage/storage.h"
 #include <math.h>
 
-const uint64_t s_powers[] = {
-    115,
-    100,
-    13225,
-    10000
-};
+static BigInt_t *s_building_costs[NUM_BUILDINGS];
 
-void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store)
+static void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store, BigInt_t *tmp1, BigInt_t *tmp2, BigInt_t *tmp3)
 {
-    BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-
     switch (type)
     {
     case BUILDING_TYPE_CURSOR:
@@ -95,7 +86,7 @@ void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *sto
 
     BigInt_from_int(COOKIE_COUNTER_WORDS, tmp1, 115);
     BigInt_from_int(COOKIE_COUNTER_WORDS, tmp2, building_count);
-    
+
     BigInt_pow(COOKIE_COUNTER_WORDS, tmp1, tmp2, tmp3);
     BigInt_mul_basic(COOKIE_COUNTER_WORDS, tmp3, store, tmp1);
 
@@ -104,8 +95,49 @@ void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *sto
     BigInt_pow(COOKIE_COUNTER_WORDS, tmp3, store, tmp2);
 
     BigInt_div(COOKIE_COUNTER_WORDS, tmp1, tmp2, store);
+}
+
+void buildings_init(uint8_t *building_counts)
+{
+    BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
+    {
+        s_building_costs[i] = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+        building_set_cost(BUILDING_TYPE_CURSOR + i, building_counts[i], s_building_costs[i], tmp1, tmp2, tmp3);
+    }
 
     free(tmp1);
     free(tmp2);
     free(tmp3);
+}
+
+BigInt_t *building_update_cost(BuildingType type, uint8_t building_count)
+{
+    BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+
+    building_set_cost(type, building_count, s_building_costs[type], tmp1, tmp2, tmp3);
+
+    free(tmp1);
+    free(tmp2);
+    free(tmp3);
+
+    return s_building_costs[type];
+}
+
+BigInt_t *building_get_cost(BuildingType type)
+{
+    return s_building_costs[type];
+}
+
+void buildings_free()
+{
+    for (size_t i = 0; i < NUM_BUILDINGS; i++)
+    {
+        free(s_building_costs[i]);
+    }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pebble.h>
+#include "buildings/buildings.h"
 
 #define GAME_MAX_ANIMATION_TIME (3 * TPS)
 
@@ -20,5 +21,11 @@ void game_draw(Layer *layer, GContext *ctx, GBitmap *fb);
 void game_draw_last(Layer *layer, GContext *ctx);
 
 void game_click();
+
+uint8_t game_purchase(BuildingType building, uint8_t count);
+
+uint8_t* game_get_building_counts();
+
+BigInt_t *game_get_cookie_count();
 
 void game_free();
