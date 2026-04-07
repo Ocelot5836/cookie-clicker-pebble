@@ -11,8 +11,8 @@ static TextLayer *s_subtext_layer;
 static AppTimer *s_next_frame_timer;
 static bool s_screen_dirty;
 
-static char s_text[MAX_TEXT_LENGTH + 1];
-static char s_subtext[MAX_SUBTEXT_LENGTH + 1];
+char s_text[MAX_TEXT_LENGTH + 1];
+char s_subtext[MAX_SUBTEXT_LENGTH + 1];
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context)
 {
@@ -41,7 +41,7 @@ static void next_frame_handler(void *context)
 #if TIME_LOGGING
     uint16_t startMs = time_ms(NULL, NULL);
 #endif
-    s_screen_dirty |= game_update(s_window);
+    s_screen_dirty |= game_update(s_window, layer_get_unobstructed_bounds(window_get_root_layer(s_window)));
 #if TIME_LOGGING
     uint16_t endMs = time_ms(NULL, NULL);
 #endif
@@ -72,6 +72,14 @@ static void render_handler(Layer *layer, GContext *ctx)
 
     s_screen_dirty = false;
 
+#if TIME_LOGGING
+    uint16_t startDrawLastMs = time_ms(NULL, NULL);
+#endif
+    game_draw_first(layer, ctx);
+#ifdef TIME_LOGGING
+    uint16_t endDrawLastMs = time_ms(NULL, NULL);
+#endif
+
     GBitmap *fb = graphics_capture_frame_buffer(ctx);
 
 #if TIME_LOGGING
@@ -83,14 +91,6 @@ static void render_handler(Layer *layer, GContext *ctx)
 #endif
 
     graphics_release_frame_buffer(ctx, fb);
-
-#if TIME_LOGGING
-    uint16_t startDrawLastMs = time_ms(NULL, NULL);
-#endif
-    game_draw_last(layer, ctx);
-#ifdef TIME_LOGGING
-    uint16_t endDrawLastMs = time_ms(NULL, NULL);
-#endif
 
 #if TIME_LOGGING
     uint16_t delta = (endDrawMs - startDrawMs) + (endDrawLastMs - startDrawLastMs);
@@ -201,12 +201,6 @@ void main_window_push()
 void main_window_free()
 {
     window_destroy(s_window);
-}
-
-void main_window_get_text(char **text, char **subtext)
-{
-    *text = s_text;
-    *subtext = s_subtext;
 }
 
 void main_window_update_text()

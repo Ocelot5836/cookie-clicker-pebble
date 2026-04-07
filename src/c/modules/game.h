@@ -14,11 +14,11 @@ void game_free_resources();
 /**
  * @return Whether the screen needs to be redrawn
  */
-bool game_update(Window *window);
+bool game_update(Window *window, GRect bounds);
+
+void game_draw_first(Layer *layer, GContext *ctx);
 
 void game_draw(Layer *layer, GContext *ctx, GBitmap *fb);
-
-void game_draw_last(Layer *layer, GContext *ctx);
 
 void game_click();
 

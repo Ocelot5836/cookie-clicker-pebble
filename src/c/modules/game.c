@@ -2,6 +2,7 @@
 #include "../windows/main_window.h"
 #include "../windows/shop_window.h"
 #include "cookie/cookie.h"
+#include "cookie/cookie_particle.h"
 #include "storage/storage.h"
 #include "engine/numberformat.h"
 #include "engine/math.h"
@@ -13,9 +14,6 @@ static BigInt_t *s_cookie_count;
 static BigInt_t *s_cookie_cpt;
 static uint64_t s_sub_cookies;
 static uint8_t s_building_counts[NUM_BUILDINGS];
-
-static char* s_text;
-static char* s_subtext;
 
 static uint8_t get_scale(uint8_t x)
 {
@@ -47,7 +45,7 @@ void game_init(Window *window)
     s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     building_get_cpt(s_building_counts, s_cookie_cpt);
 
-    main_window_get_text(&s_text, &s_subtext);
+    cookie_particles_kill();
 }
 
 void game_free()
@@ -68,7 +66,7 @@ void game_free_resources()
     cookie_free();
 }
 
-bool game_update(Window *window)
+bool game_update(Window *window, GRect bounds)
 {
     s_game_time++;
     if (s_animation_time > 0)
@@ -88,6 +86,7 @@ bool game_update(Window *window)
             {
                 s_sub_cookies -= TPS * TPS;
                 BigInt_inc(COOKIE_COUNTER_WORDS, s_cookie_count);
+                cookie_particle_spawn();
             }
 
             storage_write_cookies(s_cookie_count);
@@ -96,7 +95,40 @@ bool game_update(Window *window)
         }
     }
 
+    cookie_particles_tick(&bounds);
+
     return true;
+}
+
+void game_draw_first(Layer *layer, GContext *ctx)
+{
+    GRect bounds = layer_get_bounds(layer);
+
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+
+    if (cookie_particle_status != 0)
+    {
+        for (size_t i = __builtin_ctz(cookie_particle_status); i < MAX_COOKIE_PARTICLES; i++)
+        {
+            if (((cookie_particle_status >> i) & 1) == 0)
+            {
+                continue;
+            }
+
+            int16_t x = cookie_particle_x[i];
+            int16_t y = cookie_particle_y[i] - COOKIE_PARTICLE_YOFF;
+
+            // Don't draw cookies behind the big cookie
+            int16_t dx = x - bounds.size.w / 2;
+            int16_t dy = y - bounds.size.h / 2;
+            if (dx * dx + dy * dy < cookie_size * cookie_size / 4 - 4 * COOKIE_PARTICLE_WIDTH * COOKIE_PARTICLE_WIDTH)
+            {
+                continue;
+            }
+
+            graphics_draw_bitmap_in_rect(ctx, s_cookie_effect, GRect(cookie_particle_x[i], cookie_particle_y[i] - COOKIE_PARTICLE_YOFF, COOKIE_PARTICLE_WIDTH, COOKIE_PARTICLE_HEIGHT));
+        }
+    }
 }
 
 void game_draw(Layer *layer, GContext *ctx, GBitmap *fb)
@@ -104,17 +136,7 @@ void game_draw(Layer *layer, GContext *ctx, GBitmap *fb)
     GRect bounds = layer_get_bounds(layer);
 
     int angle = s_game_time * 10 / TPS;
-
-    // graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    // graphics_context_set_antialiased(ctx, false);
-    // graphics_draw_rotated_bitmap(ctx, s_cookie, GPoint(80, 80), DEG_TO_TRIGANGLE(angle), GPoint(bounds.size.w / 2, bounds.size.h / 2));
-
-    // (sin_lookup(DEG_TO_TRIGANGLE(s_game_time * 10)) * MAX_COOKIE_SCALE) / TRIG_MAX_ANGLE
-    cookie_draw(layer, fb, &GPoint(bounds.size.w >> 1, bounds.size.h >> 1), DEG_TO_TRIGANGLE(angle), get_scale(GAME_MAX_ANIMATION_TIME - s_animation_time));
-}
-
-void game_draw_last(Layer *layer, GContext *ctx)
-{
+    cookie_draw(layer, fb, &GPoint(bounds.size.w / 2, bounds.size.h / 2), DEG_TO_TRIGANGLE(angle), get_scale(GAME_MAX_ANIMATION_TIME - s_animation_time));
 }
 
 void game_click()
@@ -124,6 +146,7 @@ void game_click()
     storage_write_cookies(s_cookie_count);
     update_text();
     shop_on_cookie_change();
+    cookie_particle_spawn();
 }
 
 uint8_t game_purchase(BuildingType building, uint8_t count)

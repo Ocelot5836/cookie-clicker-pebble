@@ -74,6 +74,12 @@
           "name": "BUILDINGS",
           "file": "gfx/buildings.png",
           "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "COOKIE_EFFECT",
+          "file": "gfx/cookie_effect.png",
+          "spaceOptimization": "memory"
         }
       ]
     }
