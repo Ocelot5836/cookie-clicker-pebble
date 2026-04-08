@@ -103,8 +103,6 @@ static void render_handler(Layer *layer, GContext *ctx)
 
 static void window_appear(Window *window)
 {
-    APP_LOG(APP_LOG_LEVEL_INFO, "APPEAR");
-
     game_init_resources();
 
     s_screen_dirty = true;
@@ -113,8 +111,6 @@ static void window_appear(Window *window)
 
 static void window_disappear(Window *window)
 {
-    APP_LOG(APP_LOG_LEVEL_INFO, "DISAPPEAR");
-
     game_free_resources();
 
     s_screen_dirty = false;
@@ -124,7 +120,6 @@ static void window_disappear(Window *window)
 
 static void window_load(Window *window)
 {
-    APP_LOG(APP_LOG_LEVEL_INFO, "LOAD");
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
@@ -161,8 +156,6 @@ static void window_load(Window *window)
 
 static void window_unload(Window *window)
 {
-    APP_LOG(APP_LOG_LEVEL_INFO, "UNLOAD");
-
     layer_destroy(s_render_layer);
     s_render_layer = NULL;
 

@@ -46,6 +46,16 @@ void storage_write_buildings(uint8_t *building_counts)
     persist_write_data(DATA_BUILDING_COUNTS, building_counts, NUM_BUILDINGS * sizeof(uint8_t));
 }
 
+void storage_write_time(time_t* epoch_time)
+{
+    persist_write_data(DATA_LAST_PLAYED_TIME, epoch_time, sizeof(time_t));
+}
+
+void storage_remove_time()
+{
+    persist_delete(DATA_LAST_PLAYED_TIME);
+}
+
 void storage_read_cookies(BigInt_t *cookie_count)
 {
     storage_migrate();
@@ -63,5 +73,15 @@ void storage_read_buildings(uint8_t *building_counts)
     if (persist_read_data(DATA_BUILDING_COUNTS, building_counts, NUM_BUILDINGS * sizeof(uint8_t)) == E_DOES_NOT_EXIST)
     {
         memset(building_counts, 0, NUM_BUILDINGS * sizeof(uint8_t));
+    }
+}
+
+void storage_read_time(time_t *epoch_time)
+{
+    storage_migrate();
+
+    if (persist_read_data(DATA_LAST_PLAYED_TIME, epoch_time, sizeof(time_t)) == E_DOES_NOT_EXIST)
+    {
+        epoch_time = 0L;
     }
 }

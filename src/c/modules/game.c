@@ -77,6 +77,35 @@ void game_init(Window *window)
 
     cookie_particles_kill();
 
+    time_t epoch_time;
+    storage_read_time(&epoch_time);
+
+    // This adds the cookies collected in the background
+    if (epoch_time != 0L)
+    {
+        storage_remove_time();
+
+        BigInt_t *seconds_passed = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+        BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+        BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+
+        time_t delta = time(NULL) - epoch_time;
+        BigInt_from_int(COOKIE_COUNTER_WORDS, seconds_passed, delta);
+        BigInt_mul_basic(COOKIE_COUNTER_WORDS, s_cookie_cpt, seconds_passed, tmp1);
+        BigInt_from_int(COOKIE_COUNTER_WORDS, tmp2, TPS);
+        BigInt_div(COOKIE_COUNTER_WORDS, tmp1, tmp2, seconds_passed);
+        BigInt_add(COOKIE_COUNTER_WORDS, seconds_passed, COOKIE_COUNTER_WORDS, s_cookie_count, COOKIE_COUNTER_WORDS, tmp1);
+        BigInt_copy(COOKIE_COUNTER_WORDS, s_cookie_count, tmp1);
+
+        free(seconds_passed);
+        free(tmp1);
+        free(tmp2);
+
+        storage_write_cookies(s_cookie_count);
+        update_text();
+        shop_on_cookie_change();
+    }
+
 #if SIZE_DEBUG
     APP_LOG(APP_LOG_LEVEL_INFO, "Used %zu bytes during init", pre_init_size - heap_bytes_free());
 #endif
@@ -87,6 +116,9 @@ void game_free()
     free(s_cookie_count);
     free(s_cookie_cpt);
     buildings_free();
+
+    time_t epoch_time = time(NULL);
+    storage_write_time(&epoch_time);
 }
 
 void game_init_resources()

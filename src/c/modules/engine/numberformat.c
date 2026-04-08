@@ -137,20 +137,18 @@ uint32_t format_number(BigInt_t *value, size_t max_length, char *buffer)
     if (BigInt_cmp(COOKIE_COUNTER_WORDS, value, cmp) != SMALLER)
     {
         BigInt_copy(COOKIE_COUNTER_WORDS, store1, value);
-        BigInt_from_int(COOKIE_COUNTER_WORDS, cmp, 1000);
 
-        for (size_t i = 0; i < NUMBER_NAMES_COUNT; i++)
+        for (size_t i = 0; i <= NUMBER_NAMES_COUNT; i++)
         {
             BigInt_t *from = (i & 1) ? store2 : store1;
             BigInt_t *to = (i & 1) ? store1 : store2;
 
-            BigInt_div(COOKIE_COUNTER_WORDS, from, cmp, to);
-            if (i == NUMBER_NAMES_COUNT - 1 || BigInt_cmp(COOKIE_COUNTER_WORDS, from, cmp) == SMALLER)
+            if (i == NUMBER_NAMES_COUNT || BigInt_cmp(COOKIE_COUNTER_WORDS, from, cmp) == SMALLER)
             {
-                BigInt_mul(COOKIE_COUNTER_WORDS, from, 1, cmp, COOKIE_COUNTER_WORDS, to);
-                written = format_number_manual(buffer, max_length, (double)BigInt_to_long(COOKIE_COUNTER_WORDS, to) / 1000.0, s_names[i], 1, false);
+                written = format_number_manual(buffer, max_length, (double)BigInt_to_long(COOKIE_COUNTER_WORDS, to) / 1000000.0, s_names[i - 1], 1, false);
                 break;
             }
+            BigInt_div(COOKIE_COUNTER_WORDS, from, divide, to);
         }
     }
     else
