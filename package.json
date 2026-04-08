@@ -172,8 +172,7 @@
         {
           "type": "bitmap",
           "name": "COOKIE_EFFECT",
-          "file": "gfx/cookie_effect.png",
-          "spaceOptimization": "storage"
+          "file": "gfx/cookie_effect.png"
         }
       ]
     }

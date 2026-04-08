@@ -8,7 +8,8 @@
 #include "engine/math.h"
 #include <math.h>
 
-#define SIZE_DEBUG 1
+#define SIZE_DEBUG 0
+#define SCREENSHOT_MODE 0
 
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
@@ -45,7 +46,30 @@ void game_init(Window *window)
     s_cookie_count = calloc(COOKIE_COUNTER_WORDS, BigIntWordSize);
     storage_read_cookies(s_cookie_count);
 
+#if SCREENSHOT_MODE
+    s_building_counts[BUILDING_TYPE_CURSOR] = 68;
+    s_building_counts[BUILDING_TYPE_GRANDMA] = 70;
+    s_building_counts[BUILDING_TYPE_FARM] = 43;
+    s_building_counts[BUILDING_TYPE_MINE] = 28;
+    s_building_counts[BUILDING_TYPE_FACTORY] = 23;
+    s_building_counts[BUILDING_TYPE_BANK] = 17;
+    s_building_counts[BUILDING_TYPE_TEMPLE] = 14;
+    s_building_counts[BUILDING_TYPE_WIZARD_TOWER] = 6;
+    s_building_counts[BUILDING_TYPE_SHIPMENT] = 1;
+    s_building_counts[BUILDING_TYPE_ALCHEMY_LAB] = 0;
+    s_building_counts[BUILDING_TYPE_PORTAL] = 0;
+    s_building_counts[BUILDING_TYPE_TIME_MACHINE] = 0;
+    s_building_counts[BUILDING_TYPE_ANTIMATTER_CONDENSER] = 0;
+    s_building_counts[BUILDING_TYPE_PRISM] = 0;
+    s_building_counts[BUILDING_TYPE_CHANCEMAKER] = 0;
+    s_building_counts[BUILDING_TYPE_FRACTAL_ENGINE] = 0;
+    s_building_counts[BUILDING_TYPE_JAVASCRIPT_CONSOLE] = 0;
+    s_building_counts[BUILDING_TYPE_IDLEVERSE] = 0;
+    s_building_counts[BUILDING_TYPE_CORTEX_BAKER] = 0;
+    s_building_counts[BUILDING_TYPE_YOU] = 0;
+#else
     storage_read_buildings(s_building_counts);
+#endif
     buildings_init(s_building_counts);
 
     s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);

@@ -76,7 +76,7 @@ static void render_handler(Layer *layer, GContext *ctx)
     uint16_t startDrawLastMs = time_ms(NULL, NULL);
 #endif
     game_draw_first(layer, ctx);
-#ifdef TIME_LOGGING
+#if TIME_LOGGING
     uint16_t endDrawLastMs = time_ms(NULL, NULL);
 #endif
 
@@ -146,7 +146,7 @@ static void window_load(Window *window)
     text_layer_set_text(s_text_layer, s_text);
     layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
 
-    s_subtext_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 65, bounds.size.w, 20), GRect(bounds.origin.x, bounds.origin.y + 45, bounds.size.w, 20)));
+    s_subtext_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 65, bounds.size.w, 60), GRect(bounds.origin.x, bounds.origin.y + 45, bounds.size.w, 60)));
     text_layer_set_font(s_subtext_layer, s_subfont);
     text_layer_set_background_color(s_subtext_layer, GColorClear);
     text_layer_set_text_color(s_subtext_layer, GColorWhite);
