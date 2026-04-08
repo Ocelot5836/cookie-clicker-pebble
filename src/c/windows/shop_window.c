@@ -5,6 +5,11 @@
 #include "../modules/buildings/buildings.h"
 #include "../modules/storage/storage.h"
 #include "../modules/game.h"
+#include "main_window.h"
+
+#define MAX_SHOP_ITEM_TITLE_LENGTH 30
+#define MAX_SHOP_ITEM_SUBTITLE_LENGTH 50
+#define SHOP_TEXT_AREA_HEIGHT 35
 
 const char *const s_building_names[] = {
     "Cursor",
@@ -30,6 +35,8 @@ const char *const s_building_names[] = {
 };
 
 static Window *s_window;
+static GFont s_font;
+static TextLayer *s_cps_layer;
 static SimpleMenuLayer *s_simple_menu_layer;
 static SimpleMenuSection s_menu_sections[1];
 static SimpleMenuItem s_first_menu_items[NUM_BUILDINGS];
@@ -61,9 +68,9 @@ static void update_menu()
         for (size_t i = 0; i <= (uint8_t)last_purchased_index; i++)
         {
             BigInt_t *building_cost = building_get_cost((BuildingType)i);
-            uint32_t offset = format_number(building_cost, 50, s_option_subtitles[i]);
-            snprintf(s_option_subtitles[i] + offset, 50 - offset, " cookies");
-            snprintf(s_option_titles[i], 30, "x%d %s", building_counts[i], s_building_names[i]);
+            uint32_t offset = format_number(building_cost, MAX_SHOP_ITEM_SUBTITLE_LENGTH, s_option_subtitles[i]);
+            snprintf(s_option_subtitles[i] + offset, MAX_SHOP_ITEM_SUBTITLE_LENGTH - offset, " cookies");
+            snprintf(s_option_titles[i], MAX_SHOP_ITEM_TITLE_LENGTH, "x%d %s", building_counts[i], s_building_names[i]);
         }
         return;
     }
@@ -89,19 +96,19 @@ static void update_menu()
 
         BigInt_t *building_cost = building_get_cost((BuildingType)i);
 
-        uint32_t offset = format_number(building_cost, 50, s_option_subtitles[i]);
-        snprintf(s_option_subtitles[i] + offset, 50 - offset, " cookies");
+        uint32_t offset = format_number(building_cost, MAX_SHOP_ITEM_SUBTITLE_LENGTH, s_option_subtitles[i]);
+        snprintf(s_option_subtitles[i] + offset, MAX_SHOP_ITEM_SUBTITLE_LENGTH - offset, " cookies");
 
         if (hidden)
         {
             strncpy(s_option_titles[i], "???", 4);
-            #if PBL_COLOR
+#if PBL_COLOR
             gbitmap_fill_all_except(GColorOxfordBlue, GColorOxfordBlue, false, s_first_menu_items[i].icon, NULL);
-            #endif
+#endif
         }
         else
         {
-            snprintf(s_option_titles[i], 30, "x%d %s", building_counts[i], s_building_names[i]);
+            snprintf(s_option_titles[i], MAX_SHOP_ITEM_TITLE_LENGTH, "x%d %s", building_counts[i], s_building_names[i]);
         }
     }
 }
@@ -123,8 +130,8 @@ static void window_load(Window *window)
 
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
-        s_option_titles[i] = calloc(31, sizeof(char));
-        s_option_subtitles[i] = calloc(51, sizeof(char));
+        s_option_titles[i] = calloc(MAX_SHOP_ITEM_TITLE_LENGTH + 1, sizeof(char));
+        s_option_subtitles[i] = calloc(MAX_SHOP_ITEM_SUBTITLE_LENGTH + 1, sizeof(char));
 
         s_first_menu_items[i] = (SimpleMenuItem){
             .title = s_option_titles[i],
@@ -141,14 +148,30 @@ static void window_load(Window *window)
 
     update_menu();
 
-    s_simple_menu_layer = simple_menu_layer_create(bounds, window, s_menu_sections, 1, NULL);
+    s_simple_menu_layer = simple_menu_layer_create(GRect(bounds.origin.x, bounds.origin.y + SHOP_TEXT_AREA_HEIGHT, bounds.size.w, bounds.size.h - SHOP_TEXT_AREA_HEIGHT), window, s_menu_sections, 1, NULL);
     layer_add_child(window_layer, simple_menu_layer_get_layer(s_simple_menu_layer));
+
+    s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
+
+    s_cps_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, SHOP_TEXT_AREA_HEIGHT));
+    text_layer_set_font(s_cps_layer, s_font);
+    text_layer_set_background_color(s_cps_layer, GColorClear);
+    text_layer_set_text_color(s_cps_layer, GColorBlack);
+    text_layer_set_text_alignment(s_cps_layer, GTextAlignmentCenter);
+    text_layer_set_text(s_cps_layer, s_text);
+    layer_add_child(window_layer, text_layer_get_layer(s_cps_layer));
 }
 
 static void window_unload(Window *window)
 {
     simple_menu_layer_destroy(s_simple_menu_layer);
     s_simple_menu_layer = NULL;
+
+    fonts_unload_custom_font(s_font);
+    s_font = NULL;
+
+    text_layer_destroy(s_cps_layer);
+    s_cps_layer = NULL;
 
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
@@ -192,4 +215,5 @@ void shop_on_cookie_change()
 
     update_menu();
     layer_mark_dirty(simple_menu_layer_get_layer(s_simple_menu_layer));
+    layer_mark_dirty(text_layer_get_layer(s_cps_layer));
 }

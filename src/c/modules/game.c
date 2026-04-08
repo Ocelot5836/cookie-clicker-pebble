@@ -245,9 +245,9 @@ uint8_t game_purchase(BuildingType building, uint8_t count)
 
     storage_write_cookies(s_cookie_count);
     storage_write_buildings(s_building_counts);
+    building_get_cpt(s_building_counts, s_cookie_cpt);
     update_text();
     shop_on_cookie_change();
-    building_get_cpt(s_building_counts, s_cookie_cpt);
 
     return i;
 }
