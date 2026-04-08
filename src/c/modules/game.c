@@ -8,6 +8,8 @@
 #include "engine/math.h"
 #include <math.h>
 
+#define SIZE_DEBUG 1
+
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
 static BigInt_t *s_cookie_count;
@@ -33,6 +35,10 @@ static void update_text()
 
 void game_init(Window *window)
 {
+#if SIZE_DEBUG
+    size_t pre_init_size = heap_bytes_free();
+#endif
+
     s_game_time = 0;
     s_animation_time = 0;
 
@@ -46,6 +52,10 @@ void game_init(Window *window)
     building_get_cpt(s_building_counts, s_cookie_cpt);
 
     cookie_particles_kill();
+
+#if SIZE_DEBUG
+    APP_LOG(APP_LOG_LEVEL_INFO, "Used %zu bytes during init", pre_init_size - heap_bytes_free());
+#endif
 }
 
 void game_free()

@@ -71,15 +71,109 @@
         },
         {
           "type": "bitmap",
-          "name": "BUILDINGS",
-          "file": "gfx/buildings.png",
-          "spaceOptimization": "memory"
+          "name": "BUILDING_TYPE_CURSOR",
+          "file": "gfx/buildings/cursor.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_GRANDMA",
+          "file": "gfx/buildings/grandma.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_FARM",
+          "file": "gfx/buildings/farm.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_MINE",
+          "file": "gfx/buildings/mine.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_FACTORY",
+          "file": "gfx/buildings/factory.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_BANK",
+          "file": "gfx/buildings/bank.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_TEMPLE",
+          "file": "gfx/buildings/temple.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_WIZARD_TOWER",
+          "file": "gfx/buildings/wizard_tower.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_SHIPMENT",
+          "file": "gfx/buildings/shipment.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_ALCHEMY_LAB",
+          "file": "gfx/buildings/alchemy_lab.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_PORTAL",
+          "file": "gfx/buildings/portal.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_TIME_MACHINE",
+          "file": "gfx/buildings/time_machine.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_ANTIMATTER_CONDENSER",
+          "file": "gfx/buildings/antimatter_condenser.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_PRISM",
+          "file": "gfx/buildings/prism.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_CHANCEMAKER",
+          "file": "gfx/buildings/chancemaker.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_FRACTAL_ENGINE",
+          "file": "gfx/buildings/fractal_engine.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_JAVASCRIPT_CONSOLE",
+          "file": "gfx/buildings/javascript_console.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_IDLEVERSE",
+          "file": "gfx/buildings/idleverse.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_CORTEX_BAKER",
+          "file": "gfx/buildings/cortex_baker.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BUILDING_TYPE_CORTEX_YOU",
+          "file": "gfx/buildings/you.png"
         },
         {
           "type": "bitmap",
           "name": "COOKIE_EFFECT",
           "file": "gfx/cookie_effect.png",
-          "spaceOptimization": "memory"
+          "spaceOptimization": "storage"
         }
       ]
     }

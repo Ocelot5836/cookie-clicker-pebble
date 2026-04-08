@@ -1,11 +1,10 @@
 #include "shop_window.h"
 #include "../modules/engine/numberformat.h"
 #include "../modules/engine/math.h"
+#include "../modules/engine/gbitmap_color_palette_manipulator.h"
 #include "../modules/buildings/buildings.h"
 #include "../modules/storage/storage.h"
 #include "../modules/game.h"
-
-#define MENU_SPRITE_SIZE 32
 
 const char *const s_building_names[] = {
     "Cursor",
@@ -37,7 +36,6 @@ static SimpleMenuItem s_first_menu_items[NUM_BUILDINGS];
 
 static char *s_option_titles[NUM_BUILDINGS];
 static char *s_option_subtitles[NUM_BUILDINGS];
-static GBitmap *s_menu_icon_buildings;
 
 static void update_menu()
 {
@@ -79,13 +77,13 @@ static void update_menu()
         {
             if (s_first_menu_items[i].icon != NULL)
             {
-                free(s_first_menu_items[i].icon);
+                gbitmap_destroy(s_first_menu_items[i].icon);
             }
-            s_first_menu_items[i].icon = gbitmap_create_as_sub_bitmap(s_menu_icon_buildings, GRect(hidden ? MENU_SPRITE_SIZE : 0, i * MENU_SPRITE_SIZE, MENU_SPRITE_SIZE, MENU_SPRITE_SIZE));
+            s_first_menu_items[i].icon = gbitmap_create_with_resource(RESOURCE_ID_BUILDING_TYPE_CURSOR + i);
         }
         else if (s_first_menu_items[i].icon != NULL)
         {
-            free(s_first_menu_items[i].icon);
+            gbitmap_destroy(s_first_menu_items[i].icon);
             s_first_menu_items[i].icon = NULL;
         }
 
@@ -97,6 +95,9 @@ static void update_menu()
         if (hidden)
         {
             strncpy(s_option_titles[i], "???", 4);
+            #if PBL_COLOR
+            gbitmap_fill_all_except(GColorOxfordBlue, GColorOxfordBlue, false, s_first_menu_items[i].icon, NULL);
+            #endif
         }
         else
         {
@@ -119,13 +120,6 @@ static void window_load(Window *window)
 {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
-
-    // TODO stream parts of the image instead of trying to load the entire image
-    s_menu_icon_buildings = gbitmap_create_with_resource(RESOURCE_ID_BUILDINGS);
-    if (s_menu_icon_buildings == NULL)
-    {
-        APP_LOG(APP_LOG_LEVEL_INFO, "NULL");
-    }
 
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
@@ -160,7 +154,7 @@ static void window_unload(Window *window)
     {
         if (s_first_menu_items[i].icon != NULL)
         {
-            free(s_first_menu_items[i].icon);
+            gbitmap_destroy(s_first_menu_items[i].icon);
             s_first_menu_items[i].icon = NULL;
         }
 
@@ -169,9 +163,6 @@ static void window_unload(Window *window)
         free(s_option_subtitles[i]);
         s_option_subtitles[i] = NULL;
     }
-
-    gbitmap_destroy(s_menu_icon_buildings);
-    s_menu_icon_buildings = NULL;
 }
 
 void shop_window_push()
