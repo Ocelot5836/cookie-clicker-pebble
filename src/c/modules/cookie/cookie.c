@@ -1,5 +1,4 @@
 #include "cookie.h"
-#include "../engine/pixel.h"
 #include "../engine/math.h"
 
 #define PADDING 20
@@ -19,16 +18,6 @@ static int16_t polar_div(int32_t numer, uint32_t denom)
     }
     return res;
 }
-
-#ifdef PBL_BW
-static bool get_bitmap_bit(GBitmapDataRowInfo info, uint16_t x)
-{
-    // Read the single bit of the correct byte
-    uint8_t byte = x >> 3;
-    uint8_t bit = x & 7;
-    return ((info.data[x >> 3]) >> (x & 7)) & 1;
-}
-#endif
 
 void cookie_load(uint32_t resource_id)
 {
@@ -91,7 +80,7 @@ void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8
             if (((src_info.data[src_x >> 3]) >> (src_x & 7)) & 1)
 #endif
             {
-                set_pixel_color(dest_info, x, GColorWhite);
+                memset(&dest_info.data[x], GColorWhiteARGB8, 1);
             }
 #elif PBL_COLOR
 #if !DEBUG_NO_CLIP
