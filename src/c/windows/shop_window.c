@@ -9,7 +9,7 @@
 
 #define MAX_SHOP_ITEM_TITLE_LENGTH 30
 #define MAX_SHOP_ITEM_SUBTITLE_LENGTH 50
-#define SHOP_TEXT_AREA_HEIGHT 32
+#define SHOP_TEXT_AREA_HEIGHT PBL_IF_ROUND_ELSE(40, 32)
 #define SHOP_TEXT_AREA_Y PBL_IF_ROUND_ELSE(8, 0)
 
 const char *const s_building_names[] = {
