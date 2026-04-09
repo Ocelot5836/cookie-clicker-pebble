@@ -4,6 +4,7 @@
 #include "cookie/cookie.h"
 #include "cookie/cookie_particle.h"
 #include "storage/storage.h"
+#include "storage/tempnumbers.h"
 #include "engine/numberformat.h"
 #include "engine/math.h"
 #include <math.h>
@@ -15,7 +16,7 @@ static uint64_t s_game_time;
 static uint8_t s_animation_time;
 static BigInt_t *s_cookie_count;
 static BigInt_t *s_cookie_cpt;
-static uint64_t s_sub_cookies;
+static BigInt_t *s_sub_cookies;
 static uint8_t s_building_counts[NUM_BUILDINGS];
 
 static uint8_t get_scale(uint8_t x)
@@ -73,6 +74,7 @@ void game_init(Window *window)
     buildings_init(s_building_counts);
 
     s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
+    s_sub_cookies = calloc(COOKIE_COUNTER_WORDS, BigIntWordSize);
     building_get_cpt(s_building_counts, s_cookie_cpt);
 
     cookie_particles_kill();
@@ -115,6 +117,7 @@ void game_free()
 {
     free(s_cookie_count);
     free(s_cookie_cpt);
+    free(s_sub_cookies);
     buildings_free();
 
     time_t epoch_time = time(NULL);
@@ -140,18 +143,30 @@ bool game_update(Window *window, GRect bounds)
         s_animation_time--;
     }
 
+#if TIME_LOGGING
+    uint16_t startMs = time_ms(NULL, NULL);
+#endif
     if (!BigInt_is_zero(COOKIE_COUNTER_WORDS, s_cookie_cpt))
     {
-        // TODO use long integer for sub cookies
-        uint64_t cpt = BigInt_to_long(COOKIE_COUNTER_WORDS, s_cookie_cpt);
-        s_sub_cookies += cpt;
+        BigInt_add(COOKIE_COUNTER_WORDS, s_cookie_cpt, COOKIE_COUNTER_WORDS, s_sub_cookies, COOKIE_COUNTER_WORDS, number_temp1);
+        BigInt_copy(COOKIE_COUNTER_WORDS, s_sub_cookies, number_temp1);
+        BigInt_from_int(COOKIE_COUNTER_WORDS, number_temp1, TPS * TPS);
 
-        if (s_sub_cookies > TPS * TPS)
+        if (BigInt_cmp(COOKIE_COUNTER_WORDS, s_sub_cookies, number_temp1) != SMALLER)
         {
-            while (s_sub_cookies > TPS * TPS)
+            BigInt_div(COOKIE_COUNTER_WORDS, s_sub_cookies, number_temp1, number_temp2);
+
+            uint8_t particle_count = (uint8_t)(BigInt_to_int(COOKIE_COUNTER_WORDS, number_temp2) & 0xF);
+
+            BigInt_mul(COOKIE_COUNTER_WORDS, number_temp2, COOKIE_COUNTER_WORDS, number_temp1, COOKIE_COUNTER_WORDS, number_temp3);
+            BigInt_sub(COOKIE_COUNTER_WORDS, s_sub_cookies, COOKIE_COUNTER_WORDS, number_temp3, COOKIE_COUNTER_WORDS, number_temp1);
+            BigInt_copy(COOKIE_COUNTER_WORDS, s_sub_cookies, number_temp1);
+
+            BigInt_add(COOKIE_COUNTER_WORDS, s_cookie_count, COOKIE_COUNTER_WORDS, number_temp2, COOKIE_COUNTER_WORDS, number_temp1);
+            BigInt_copy(COOKIE_COUNTER_WORDS, s_cookie_count, number_temp1);
+
+            for (size_t i = 0; i < particle_count; i++)
             {
-                s_sub_cookies -= TPS * TPS;
-                BigInt_inc(COOKIE_COUNTER_WORDS, s_cookie_count);
                 cookie_particle_spawn();
             }
 
