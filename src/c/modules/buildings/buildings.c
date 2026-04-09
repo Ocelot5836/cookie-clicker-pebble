@@ -1,11 +1,10 @@
 #include "buildings.h"
 #include "../storage/storage.h"
+#include "../storage/tempnumbers.h"
 #include <math.h>
 
 static BigInt_t *s_building_costs[NUM_BUILDINGS];
 static BigInt_t *factor;
-static BigInt_t *temp1;
-static BigInt_t *temp2;
 static uint64_t s_building_cpt[] = {
     TPS / 10uLL,
     TPS,
@@ -29,7 +28,7 @@ static uint64_t s_building_cpt[] = {
     TPS * 510uLL * TRILLION,
 };
 
-static void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store, BigInt_t *tmp1, BigInt_t *tmp2, BigInt_t *tmp3)
+static void building_set_cost(BuildingType type, uint32_t building_count, BigInt_t *store)
 {
     switch (type)
     {
@@ -76,77 +75,65 @@ static void building_set_cost(BuildingType type, uint32_t building_count, BigInt
         BigInt_from_int(COOKIE_COUNTER_WORDS, store, PRISM_BASE_COST);
         break;
     case BUILDING_TYPE_CHANCEMAKER:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, CHANCEMAKER_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, CHANCEMAKER_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     case BUILDING_TYPE_FRACTAL_ENGINE:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, FRACTAL_ENGINE_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, FRACTAL_ENGINE_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     case BUILDING_TYPE_JAVASCRIPT_CONSOLE:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, JAVASCRIPT_CONSOLE_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, JAVASCRIPT_CONSOLE_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     case BUILDING_TYPE_IDLEVERSE:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, IDLEVERSE_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, IDLEVERSE_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     case BUILDING_TYPE_CORTEX_BAKER:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, CORTEX_BAKER_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, CORTEX_BAKER_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     case BUILDING_TYPE_YOU:
-        BigInt_from_int(2, tmp1, QUADRILLION);
-        BigInt_from_int(2, tmp2, YOU_BASE_COST);
-        BigInt_mul(2, tmp1, 2, tmp2, COOKIE_COUNTER_WORDS, store);
+        BigInt_from_int(2, number_temp1, QUADRILLION);
+        BigInt_from_int(2, number_temp2, YOU_BASE_COST);
+        BigInt_mul(2, number_temp1, 2, number_temp2, COOKIE_COUNTER_WORDS, store);
         break;
     default:
         break;
     }
 
-    BigInt_from_int(COOKIE_COUNTER_WORDS, tmp1, 115);
-    BigInt_from_int(COOKIE_COUNTER_WORDS, tmp2, building_count);
+    BigInt_from_int(COOKIE_COUNTER_WORDS, number_temp1, 115);
+    BigInt_from_int(COOKIE_COUNTER_WORDS, number_temp2, building_count);
 
-    BigInt_pow(COOKIE_COUNTER_WORDS, tmp1, tmp2, tmp3);
-    BigInt_mul_basic(COOKIE_COUNTER_WORDS, tmp3, store, tmp1);
+    BigInt_pow(COOKIE_COUNTER_WORDS, number_temp1, number_temp2, number_temp3);
+    BigInt_mul_basic(COOKIE_COUNTER_WORDS, number_temp3, store, number_temp1);
 
-    BigInt_from_int(COOKIE_COUNTER_WORDS, tmp3, 100);
+    BigInt_from_int(COOKIE_COUNTER_WORDS, number_temp3, 100);
     BigInt_from_int(COOKIE_COUNTER_WORDS, store, building_count);
-    BigInt_pow(COOKIE_COUNTER_WORDS, tmp3, store, tmp2);
+    BigInt_pow(COOKIE_COUNTER_WORDS, number_temp3, store, number_temp2);
 
-    BigInt_div(COOKIE_COUNTER_WORDS, tmp1, tmp2, store);
+    BigInt_div(COOKIE_COUNTER_WORDS, number_temp1, number_temp2, store);
 }
 
 void buildings_init(uint8_t *building_counts)
 {
-    BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-
     factor = malloc(BigIntWordSize * 2);
-    temp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    temp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
         s_building_costs[i] = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-        building_set_cost(BUILDING_TYPE_CURSOR + i, building_counts[i], s_building_costs[i], tmp1, tmp2, tmp3);
+        building_set_cost(BUILDING_TYPE_CURSOR + i, building_counts[i], s_building_costs[i]);
     }
-
-    free(tmp1);
-    free(tmp2);
-    free(tmp3);
 }
 
 void buildings_free()
 {
     free(factor);
-    free(temp1);
-    free(temp2);
     for (size_t i = 0; i < NUM_BUILDINGS; i++)
     {
         free(s_building_costs[i]);
@@ -155,16 +142,7 @@ void buildings_free()
 
 BigInt_t *building_update_cost(BuildingType type, uint8_t building_count)
 {
-    BigInt_t *tmp1 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp2 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-    BigInt_t *tmp3 = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
-
-    building_set_cost(type, building_count, s_building_costs[type], tmp1, tmp2, tmp3);
-
-    free(tmp1);
-    free(tmp2);
-    free(tmp3);
-
+    building_set_cost(type, building_count, s_building_costs[type]);
     return s_building_costs[type];
 }
 
@@ -184,9 +162,9 @@ void building_get_cpt(uint8_t *building_counts, BigInt_t *store)
         }
         
         BigInt_from_int(2, factor, building_counts[i]);
-        BigInt_from_int(COOKIE_COUNTER_WORDS, temp1, s_building_cpt[i]);
-        BigInt_mul(2, factor, COOKIE_COUNTER_WORDS, temp1, COOKIE_COUNTER_WORDS, temp2);
-        BigInt_add(COOKIE_COUNTER_WORDS, store, COOKIE_COUNTER_WORDS, temp2, COOKIE_COUNTER_WORDS, temp1);
-        BigInt_copy(COOKIE_COUNTER_WORDS, store, temp1);
+        BigInt_from_int(COOKIE_COUNTER_WORDS, number_temp1, s_building_cpt[i]);
+        BigInt_mul(2, factor, COOKIE_COUNTER_WORDS, number_temp1, COOKIE_COUNTER_WORDS, number_temp2);
+        BigInt_add(COOKIE_COUNTER_WORDS, store, COOKIE_COUNTER_WORDS, number_temp2, COOKIE_COUNTER_WORDS, number_temp1);
+        BigInt_copy(COOKIE_COUNTER_WORDS, store, number_temp1);
     }
 }
