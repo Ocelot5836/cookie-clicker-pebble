@@ -123,7 +123,7 @@ static void window_load(Window *window)
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
-    s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_20));
+    s_font = fonts_load_custom_font(resource_get_handle((bounds.size.w - bounds.origin.x) < 150 ? RESOURCE_ID_COOKIE_FONT_16 : RESOURCE_ID_COOKIE_FONT_20));
     s_subfont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
 
     s_render_layer = layer_create(bounds);

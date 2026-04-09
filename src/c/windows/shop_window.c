@@ -9,7 +9,8 @@
 
 #define MAX_SHOP_ITEM_TITLE_LENGTH 30
 #define MAX_SHOP_ITEM_SUBTITLE_LENGTH 50
-#define SHOP_TEXT_AREA_HEIGHT 35
+#define SHOP_TEXT_AREA_HEIGHT 32
+#define SHOP_TEXT_AREA_Y PBL_IF_ROUND_ELSE(8, 0)
 
 const char *const s_building_names[] = {
     "Cursor",
@@ -150,15 +151,17 @@ static void window_load(Window *window)
 
     s_simple_menu_layer = simple_menu_layer_create(GRect(bounds.origin.x, bounds.origin.y + SHOP_TEXT_AREA_HEIGHT, bounds.size.w, bounds.size.h - SHOP_TEXT_AREA_HEIGHT), window, s_menu_sections, 1, NULL);
     layer_add_child(window_layer, simple_menu_layer_get_layer(s_simple_menu_layer));
-
+    
     s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
 
-    s_cps_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, SHOP_TEXT_AREA_HEIGHT));
+    // TODO for some reason on gabbro this doesn't wrap to the next line???
+    s_cps_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + SHOP_TEXT_AREA_Y, bounds.size.w, SHOP_TEXT_AREA_HEIGHT));
     text_layer_set_font(s_cps_layer, s_font);
     text_layer_set_background_color(s_cps_layer, GColorClear);
     text_layer_set_text_color(s_cps_layer, GColorBlack);
     text_layer_set_text_alignment(s_cps_layer, GTextAlignmentCenter);
     text_layer_set_text(s_cps_layer, s_text);
+    text_layer_set_overflow_mode(s_cps_layer, GTextOverflowModeWordWrap);
     layer_add_child(window_layer, text_layer_get_layer(s_cps_layer));
 }
 

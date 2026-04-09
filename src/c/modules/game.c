@@ -199,6 +199,7 @@ void game_draw_first(Layer *layer, GContext *ctx)
             int16_t x = cookie_particle_x[i];
             int16_t y = cookie_particle_y[i] - COOKIE_PARTICLE_YOFF;
 
+#if PBL_COLOR
             // Don't draw cookies behind the big cookie
             int16_t dx = x - bounds.size.w / 2;
             int16_t dy = y - bounds.size.h / 2;
@@ -206,8 +207,9 @@ void game_draw_first(Layer *layer, GContext *ctx)
             {
                 continue;
             }
+#endif
 
-            graphics_draw_bitmap_in_rect(ctx, s_cookie_effect, GRect(cookie_particle_x[i], cookie_particle_y[i] - COOKIE_PARTICLE_YOFF, COOKIE_PARTICLE_WIDTH, COOKIE_PARTICLE_HEIGHT));
+            graphics_draw_bitmap_in_rect(ctx, s_cookie_effect, GRect(x, y, COOKIE_PARTICLE_WIDTH, COOKIE_PARTICLE_HEIGHT));
         }
     }
 }

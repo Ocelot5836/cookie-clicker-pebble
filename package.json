@@ -41,6 +41,11 @@
         },
         {
           "type": "font",
+          "name": "COOKIE_FONT_16",
+          "file": "cookie.ttf"
+        },
+        {
+          "type": "font",
           "name": "COOKIE_FONT_20",
           "file": "cookie.ttf"
         },

@@ -45,13 +45,13 @@ void cookie_free()
     gbitmap_destroy(s_cookie_effect);
 }
 
-void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8_t scale)
 // Based on https://github.com/coredevices/PebbleOS/blob/ef24b82802ba608eba87b9d6c5d6a9d1562ea397/src/fw/applib/graphics/graphics_bitmap.c#L131
+void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8_t scale)
 {
     GRect dest_clip = layer_get_bounds(layer);
     GPoint src_ic = GPoint(cookie_size / 2, cookie_size / 2);
     GPoint dest_ic = GPoint(pos->x, pos->y);
-    uint16_t base_scale = (MIN(dest_clip.size.w, dest_clip.size.h) - 100) * COOKIE_SCALE_INCREMENT / 80;
+    int32_t base_scale = COOKIE_SCALE_INCREMENT * (MIN(dest_clip.size.w, dest_clip.size.h) - cookie_size - PBL_IF_ROUND_ELSE(60, 30)) / PBL_IF_ROUND_ELSE(12, 6);
 
     grect_clip(&dest_clip, &GRect(dest_ic.x - src_ic.x - PADDING, dest_ic.y - src_ic.y - PADDING, cookie_size + 2 * PADDING, cookie_size + 2 * PADDING));
 
