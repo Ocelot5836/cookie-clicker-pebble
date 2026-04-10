@@ -11,10 +11,7 @@ void game_init_resources();
 
 void game_free_resources();
 
-/**
- * @return Whether the screen needs to be redrawn
- */
-bool game_update(Window *window, GRect bounds);
+void game_update(Window *window, GRect bounds);
 
 void game_draw_first(Layer *layer, GContext *ctx);
 

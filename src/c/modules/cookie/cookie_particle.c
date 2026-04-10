@@ -1,6 +1,7 @@
-#include "cookie.h"
 #include "cookie_particle.h"
+#include "cookie.h"
 
+#if PARTICLE_ENABLE
 uint8_t cookie_particle_x[MAX_COOKIE_PARTICLES];
 uint16_t cookie_particle_y[MAX_COOKIE_PARTICLES];
 uint8_t cookie_particle_speed[MAX_COOKIE_PARTICLES];
@@ -56,3 +57,4 @@ void cookie_particles_tick(GRect *bounds)
         }
     }
 }
+#endif

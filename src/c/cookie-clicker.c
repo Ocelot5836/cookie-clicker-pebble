@@ -7,15 +7,13 @@
 
 int main(void)
 {
-  format_init();
   tempnumbers_init();
-  
+
   main_window_push();
   app_event_loop();
-  
+
   main_window_free();
   shop_window_free();
 
   tempnumbers_free();
-  format_free();
 }

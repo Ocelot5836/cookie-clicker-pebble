@@ -15,5 +15,3 @@
 #define ROUND(num, denom) (((num) + ((denom) / 2))/(denom))
 #define WITHIN(n, min, max) ((n) >= (min) && (n) <= (max))
 #define RANGE_WITHIN(n_min, n_max, min, max) ((n_min) >= (min) && (n_max) <= (max))
-
-uint32_t int_sqrt(uint32_t x);

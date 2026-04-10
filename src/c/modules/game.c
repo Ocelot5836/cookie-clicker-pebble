@@ -1,16 +1,16 @@
 #include "game.h"
+#include "flags.h"
 #include "../windows/main_window.h"
 #include "../windows/shop_window.h"
 #include "cookie/cookie.h"
+#if PARTICLE_ENABLE
 #include "cookie/cookie_particle.h"
+#endif
 #include "storage/storage.h"
 #include "storage/tempnumbers.h"
 #include "engine/numberformat.h"
 #include "engine/math.h"
 #include <math.h>
-
-#define SIZE_DEBUG 0
-#define SCREENSHOT_MODE 0
 
 static uint64_t s_game_time;
 static uint8_t s_animation_time;
@@ -30,8 +30,11 @@ static uint8_t get_scale(uint8_t x)
 
 static void update_text()
 {
-    format_cookie_number(s_cookie_count, MAX_TEXT_LENGTH, s_text);
     format_cps_number(s_cookie_cpt, MAX_SUBTEXT_LENGTH, s_subtext);
+
+    uint32_t written = format_number(s_cookie_count, MAX_TEXT_LENGTH, s_text, true);
+    snprintf(s_text + written, MAX_TEXT_LENGTH - written, " cookies");
+
     main_window_update_text();
 }
 
@@ -39,12 +42,13 @@ void game_init(Window *window)
 {
 #if SIZE_DEBUG
     size_t pre_init_size = heap_bytes_free();
+    APP_LOG(APP_LOG_LEVEL_INFO, "Starting with %zu bytes before init", heap_bytes_free());
 #endif
 
     s_game_time = 0;
     s_animation_time = 0;
 
-    s_cookie_count = calloc(COOKIE_COUNTER_WORDS, BigIntWordSize);
+    s_cookie_count = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     storage_read_cookies(s_cookie_count);
 
 #if SCREENSHOT_MODE
@@ -71,13 +75,20 @@ void game_init(Window *window)
 #else
     storage_read_buildings(s_building_counts);
 #endif
+
     buildings_init(s_building_counts);
+
+#if SIZE_DEBUG
+    APP_LOG(APP_LOG_LEVEL_INFO, "%zu bytes free", heap_bytes_free());
+#endif
 
     s_cookie_cpt = malloc(BigIntWordSize * COOKIE_COUNTER_WORDS);
     s_sub_cookies = calloc(COOKIE_COUNTER_WORDS, BigIntWordSize);
     building_get_cpt(s_building_counts, s_cookie_cpt);
 
+#if PARTICLE_ENABLE
     cookie_particles_kill();
+#endif
 
     time_t epoch_time;
     storage_read_time(&epoch_time);
@@ -135,7 +146,7 @@ void game_free_resources()
     cookie_free();
 }
 
-bool game_update(Window *window, GRect bounds)
+void game_update(Window *window, GRect bounds)
 {
     s_game_time++;
     if (s_animation_time > 0)
@@ -146,6 +157,7 @@ bool game_update(Window *window, GRect bounds)
 #if TIME_LOGGING
     uint16_t startMs = time_ms(NULL, NULL);
 #endif
+
     if (!BigInt_is_zero(COOKIE_COUNTER_WORDS, s_cookie_cpt))
     {
         BigInt_add(COOKIE_COUNTER_WORDS, s_cookie_cpt, COOKIE_COUNTER_WORDS, s_sub_cookies, COOKIE_COUNTER_WORDS, number_temp1);
@@ -156,7 +168,9 @@ bool game_update(Window *window, GRect bounds)
         {
             BigInt_div(COOKIE_COUNTER_WORDS, s_sub_cookies, number_temp1, number_temp2);
 
+#if PARTICLE_ENABLE
             uint8_t particle_count = (uint8_t)(BigInt_to_int(COOKIE_COUNTER_WORDS, number_temp2) & 0xF);
+#endif
 
             BigInt_mul(COOKIE_COUNTER_WORDS, number_temp2, COOKIE_COUNTER_WORDS, number_temp1, COOKIE_COUNTER_WORDS, number_temp3);
             BigInt_sub(COOKIE_COUNTER_WORDS, s_sub_cookies, COOKIE_COUNTER_WORDS, number_temp3, COOKIE_COUNTER_WORDS, number_temp1);
@@ -165,10 +179,12 @@ bool game_update(Window *window, GRect bounds)
             BigInt_add(COOKIE_COUNTER_WORDS, s_cookie_count, COOKIE_COUNTER_WORDS, number_temp2, COOKIE_COUNTER_WORDS, number_temp1);
             BigInt_copy(COOKIE_COUNTER_WORDS, s_cookie_count, number_temp1);
 
+#if PARTICLE_ENABLE
             for (size_t i = 0; i < particle_count; i++)
             {
                 cookie_particle_spawn();
             }
+#endif
 
             storage_write_cookies(s_cookie_count);
             update_text();
@@ -176,13 +192,14 @@ bool game_update(Window *window, GRect bounds)
         }
     }
 
+#if PARTICLE_ENABLE
     cookie_particles_tick(&bounds);
-
-    return true;
+#endif
 }
 
 void game_draw_first(Layer *layer, GContext *ctx)
 {
+#if PARTICLE_ENABLE
     GRect bounds = layer_get_bounds(layer);
 
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
@@ -199,7 +216,7 @@ void game_draw_first(Layer *layer, GContext *ctx)
             int16_t x = cookie_particle_x[i];
             int16_t y = cookie_particle_y[i] - COOKIE_PARTICLE_YOFF;
 
-#if PBL_COLOR
+#if PARTICLE_CULLING
             // Don't draw cookies behind the big cookie
             int16_t dx = x - bounds.size.w / 2;
             int16_t dy = y - bounds.size.h / 2;
@@ -212,6 +229,7 @@ void game_draw_first(Layer *layer, GContext *ctx)
             graphics_draw_bitmap_in_rect(ctx, s_cookie_effect, GRect(x, y, COOKIE_PARTICLE_WIDTH, COOKIE_PARTICLE_HEIGHT));
         }
     }
+#endif
 }
 
 void game_draw(Layer *layer, GContext *ctx, GBitmap *fb)
@@ -229,7 +247,9 @@ void game_click()
     storage_write_cookies(s_cookie_count);
     update_text();
     shop_on_cookie_change();
+#if PARTICLE_ENABLE
     cookie_particle_spawn();
+#endif
 }
 
 uint8_t game_purchase(BuildingType building, uint8_t count)

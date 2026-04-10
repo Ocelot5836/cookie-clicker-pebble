@@ -41,16 +41,14 @@ static void next_frame_handler(void *context)
 #if TIME_LOGGING
     uint16_t startMs = time_ms(NULL, NULL);
 #endif
-    s_screen_dirty |= game_update(s_window, layer_get_unobstructed_bounds(window_get_root_layer(s_window)));
+    game_update(s_window, layer_get_unobstructed_bounds(window_get_root_layer(s_window)));
 #if TIME_LOGGING
     uint16_t endMs = time_ms(NULL, NULL);
 #endif
 
     // Draw the next frame
-    if (s_screen_dirty)
-    {
-        layer_mark_dirty(window_get_root_layer(s_window));
-    }
+    layer_mark_dirty(window_get_root_layer(s_window));
+    s_screen_dirty = true;
 
     s_next_frame_timer = app_timer_register(DELTA, next_frame_handler, NULL);
 
@@ -123,8 +121,22 @@ static void window_load(Window *window)
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
-    s_font = fonts_load_custom_font(resource_get_handle((bounds.size.w - bounds.origin.x) < 150 ? RESOURCE_ID_COOKIE_FONT_16 : RESOURCE_ID_COOKIE_FONT_20));
-    s_subfont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
+    GFont font;
+    GFont subfont;
+    if ((bounds.size.w - bounds.origin.x) < 150)
+    {
+        s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
+        s_subfont = NULL;
+        font = s_font;
+        subfont = s_font;
+    }
+    else
+    {
+        s_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_20));
+        s_subfont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_COOKIE_FONT_14));
+        font = s_font;
+        subfont = s_subfont;
+    }
 
     s_render_layer = layer_create(bounds);
     layer_set_update_proc(s_render_layer, render_handler);
@@ -134,7 +146,7 @@ static void window_load(Window *window)
     memset(s_subtext, 0, sizeof(char) * (MAX_SUBTEXT_LENGTH + 1));
 
     s_text_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 20, bounds.size.w, 45), GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, 45)));
-    text_layer_set_font(s_text_layer, s_font);
+    text_layer_set_font(s_text_layer, font);
     text_layer_set_background_color(s_text_layer, GColorClear);
     text_layer_set_text_color(s_text_layer, GColorWhite);
     text_layer_set_text_alignment(s_text_layer, GTextAlignmentCenter);
@@ -142,7 +154,7 @@ static void window_load(Window *window)
     layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
 
     s_subtext_layer = text_layer_create(PBL_IF_ROUND_ELSE(GRect(bounds.origin.x, bounds.origin.y + 65, bounds.size.w, 60), GRect(bounds.origin.x, bounds.origin.y + 45, bounds.size.w, 60)));
-    text_layer_set_font(s_subtext_layer, s_subfont);
+    text_layer_set_font(s_subtext_layer, subfont);
     text_layer_set_background_color(s_subtext_layer, GColorClear);
     text_layer_set_text_color(s_subtext_layer, GColorWhite);
     text_layer_set_text_alignment(s_subtext_layer, GTextAlignmentCenter);
@@ -162,8 +174,11 @@ static void window_unload(Window *window)
     fonts_unload_custom_font(s_font);
     s_font = NULL;
 
-    fonts_unload_custom_font(s_subfont);
-    s_subfont = NULL;
+    if (s_subfont != NULL)
+    {
+        fonts_unload_custom_font(s_subfont);
+        s_subfont = NULL;
+    }
 
     text_layer_destroy(s_text_layer);
     s_text_layer = NULL;

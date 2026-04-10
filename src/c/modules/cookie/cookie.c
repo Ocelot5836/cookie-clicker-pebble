@@ -1,11 +1,13 @@
+#include "../flags.h"
 #include "cookie.h"
 #include "../engine/math.h"
 
 #define PADDING 20
-#define DEBUG_NO_CLIP 0
 
 GBitmap *s_cookie;
+#if PARTICLE_ENABLE
 GBitmap *s_cookie_effect;
+#endif
 uint8_t cookie_size;
 
 //! a div and mod operation where any remainder will always be the same direction as the numerator
@@ -22,7 +24,9 @@ static int16_t polar_div(int32_t numer, uint32_t denom)
 void cookie_load(uint32_t resource_id)
 {
     s_cookie = gbitmap_create_with_resource(resource_id);
+#if PARTICLE_ENABLE
     s_cookie_effect = gbitmap_create_with_resource(RESOURCE_ID_COOKIE_EFFECT);
+#endif
 
     GRect bounds = gbitmap_get_bounds(s_cookie);
     cookie_size = MIN(bounds.size.w, bounds.size.h);
@@ -31,7 +35,9 @@ void cookie_load(uint32_t resource_id)
 void cookie_free()
 {
     gbitmap_destroy(s_cookie);
+#if PARTICLE_ENABLE
     gbitmap_destroy(s_cookie_effect);
+#endif
 }
 
 // Based on https://github.com/coredevices/PebbleOS/blob/ef24b82802ba608eba87b9d6c5d6a9d1562ea397/src/fw/applib/graphics/graphics_bitmap.c#L131
@@ -80,7 +86,10 @@ void cookie_draw(Layer *layer, GBitmap *fb, GPoint *pos, int32_t rotation, uint8
             if (((src_info.data[src_x >> 3]) >> (src_x & 7)) & 1)
 #endif
             {
-                memset(&dest_info.data[x], GColorWhiteARGB8, 1);
+                uint8_t byte = x >> 3;
+                uint8_t bit = x & 7;
+                dest_info.data[byte] &= ~(1 << bit);
+                dest_info.data[byte] = 0;
             }
 #elif PBL_COLOR
 #if !DEBUG_NO_CLIP
